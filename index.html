@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Performance Zheos</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --ink:#162033; --muted:#6d7890; --line:#e6eaf0;
+  --blue:#0066ff; --blue2:#0e46a3; --green:#17a673; --yellow:#f5ad21; --red:#e44a59;
+  --nav:#101a31; --nav2:#172442; --shadow:0 8px 30px rgba(25,42,70,.08);
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{height:72px;background:linear-gradient(110deg,var(--nav),var(--nav2));color:white;display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:20;box-shadow:0 6px 18px rgba(0,0,0,.13)}
+.logo{font-size:25px}.headcopy{line-height:1.08}.headcopy b{font-size:18px}.headcopy small{display:block;color:#c4cde1;margin-top:5px}
+.top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+button,select{font:inherit}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--blue);color:#fff}.btn.ghost{background:#263556;color:#fff}.btn.soft{background:#edf4ff;color:#1858b8}
+.shell{max-width:1500px;margin:auto;padding:20px}
+.hero{background:linear-gradient(135deg,#ffffff 0%,#eef5ff 55%,#f5fbff 100%);border:1px solid #dfe8f5;border-radius:20px;padding:22px 24px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:20px;align-items:center}
+.hero h1{margin:0;font-size:28px;letter-spacing:-.6px}.hero p{margin:7px 0 0;color:var(--muted);max-width:760px}
+.hero .mark{font-size:42px;background:#fff;border:1px solid #dfe8f5;width:72px;height:72px;border-radius:18px;display:grid;place-items:center;box-shadow:0 8px 24px rgba(20,80,170,.08)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;background:#eaf0f8;padding:5px;border-radius:13px;width:max-content;max-width:100%}
+.tab{border:0;background:transparent;color:#52607a;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}
+.tab.active{background:#fff;color:#164f9f;box-shadow:0 2px 10px rgba(20,40,80,.08)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);padding:14px 16px;border-radius:16px;margin-bottom:16px;box-shadow:0 4px 18px rgba(25,42,70,.045)}
+.consultant-filter{display:flex;gap:8px;align-items:center}.consultant-filter select{min-width:230px;border:1px solid #d9e1ec;border-radius:10px;padding:9px 11px;background:#fff;color:#26344f;font-weight:700}
+
+.filter-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.seg{display:flex;background:#eef2f8;padding:4px;border-radius:10px}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:800;color:#68738b}.seg button.active{background:#fff;color:#154b9c;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.badge{display:inline-flex;gap:6px;align-items:center;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800;background:#eef3fb;color:#40506c}
+.badge.ok{background:#e8f8f1;color:#08764e}.badge.warn{background:#fff5dd;color:#9c6400}
+.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(6,minmax(150px,1fr));margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}
+.kpi{padding:16px}.kpi .label{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}.kpi .value{font-size:26px;font-weight:900;margin-top:7px}.kpi .sub{font-size:12px;color:var(--muted);margin-top:5px}
+.cols2{grid-template-columns:1.35fr .65fr}.cols3{grid-template-columns:repeat(3,1fr)}
+.section{padding:17px}.section h2{margin:0 0 12px;font-size:16px}.section h3{margin:0 0 10px;font-size:14px;color:#34435f}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 9px;border-bottom:1px solid #eef1f5;text-align:left;white-space:nowrap}th{color:#69758c;font-size:11px;text-transform:uppercase;letter-spacing:.03em}.num{text-align:right}
+.scorepill{font-weight:900;border-radius:999px;padding:5px 9px;display:inline-block;min-width:48px;text-align:center}
+.s-green{background:#e7f7f0;color:#0b8157}.s-yellow{background:#fff4d9;color:#a36a00}.s-red{background:#fdeaec;color:#bd2637}
+.meter{height:9px;border-radius:999px;background:#edf0f5;overflow:hidden;margin-top:8px}.meter>span{height:100%;display:block;background:linear-gradient(90deg,#175fe6,#11a06e);border-radius:999px}
+.bigscore{font-size:54px;font-weight:950;letter-spacing:-2px}.center{text-align:center}
+.region-card{padding:16px}.region-title{display:flex;justify-content:space-between;align-items:center}.region-name{font-weight:900;font-size:18px}.region-score{font-weight:950;font-size:28px}
+.barline{display:grid;grid-template-columns:130px 1fr 70px;gap:10px;align-items:center;margin:10px 0}.bar{height:10px;background:#edf0f6;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#2869e8;border-radius:99px}
+.action{padding:11px 12px;border-radius:11px;margin:8px 0;font-size:13px;font-weight:700}.action.red{background:#fff0f1;color:#a52f3a}.action.yellow{background:#fff7e4;color:#8a6206}.action.green{background:#ebf9f3;color:#11734f}
+.upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.upload{border:1px dashed #c9d3e2;border-radius:13px;padding:14px;background:#fafcff}.upload b{display:block;margin-bottom:4px}.upload input{margin-top:10px;width:100%}
+.mini{font-size:12px;color:var(--muted)}.hidden{display:none!important}.scroll{overflow:auto;max-height:570px}
+.consultant-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.person{font-size:20px;font-weight:900}.metric-row{display:grid;grid-template-columns:190px 1fr 85px 75px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eef1f5}
+.proj{padding:16px}.proj .scenario{display:flex;justify-content:space-between;padding:11px;border-radius:10px;margin:8px 0;font-weight:800}.scenario.red{background:#fff0f1}.scenario.yellow{background:#fff6df}.scenario.green{background:#eaf8f2}
+.empty{padding:36px 20px;text-align:center;color:var(--muted)}
+.footer{font-size:11px;color:#8893a8;text-align:center;padding:18px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.cols2,.cols3{grid-template-columns:1fr}.upload-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){header{padding:0 12px}.headcopy small{display:none}.shell{padding:12px}.hero{padding:16px}.hero .mark{display:none}.hero h1{font-size:22px}.consultant-filter{width:100%}.consultant-filter select{flex:1;min-width:0}.kpis{grid-template-columns:repeat(2,1fr)}.upload-grid{grid-template-columns:1fr}.kpi .value{font-size:22px}.metric-row{grid-template-columns:1fr 70px}.metric-row .bar{display:none}}
+@media print{
+  header,.tabs,.toolbar,#tab-dados,.no-print{display:none!important}
+  body{background:#fff}.shell{max-width:none;padding:0}.card{box-shadow:none;break-inside:avoid}
+  .kpis{grid-template-columns:repeat(3,1fr)} .scroll{max-height:none;overflow:visible}
+  @page{size:A4 landscape;margin:8mm}
+}
+
+/* V3: intelligence layer */
+.intel-strip{display:grid;grid-template-columns:1.05fr 1.95fr;gap:14px;margin-bottom:14px}
+.priority-card{padding:18px;background:linear-gradient(135deg,#102552,#164b9c);color:white;border:0}
+.priority-card .eyebrow{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#aecaef}
+.priority-card h2{font-size:24px;margin:7px 0 5px}.priority-card p{margin:0;color:#d6e4fb;line-height:1.45}
+.priority-number{font-size:30px;font-weight:950;margin-top:12px}
+.diagnosis-card{padding:18px}.diagnosis-main{display:flex;align-items:flex-start;gap:13px}
+.diag-icon{font-size:28px}.diag-title{font-size:20px;font-weight:950;margin-bottom:4px}.diag-copy{color:var(--muted);line-height:1.45}
+.diag-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:13px}
+.diag-chip{padding:9px 10px;border-radius:10px;background:#f4f7fb;font-size:12px;font-weight:750}
+.score-track{position:relative;height:18px;border-radius:999px;background:linear-gradient(90deg,#f4d7dc 0 24.9%,#ffecc4 24.9% 50%,#dbe9ff 50% 70%,#d9f3e9 70% 100%);margin:18px 0 8px}
+.score-dot{position:absolute;top:50%;width:24px;height:24px;border-radius:50%;background:#102552;border:4px solid white;box-shadow:0 2px 9px rgba(0,0,0,.2);transform:translate(-50%,-50%)}
+.score-scale{display:flex;justify-content:space-between;font-size:11px;color:#778298;font-weight:800}
+.rank-badges{display:flex;gap:6px;flex-wrap:wrap}.tag{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px}.tag.gold{background:#fff1bd;color:#835d00}.tag.up{background:#e8f8f1;color:#08764e}.tag.attn{background:#fdebed;color:#b22c3d}
+.evolution-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.evo{padding:13px;border-radius:12px;background:#f8faff;border:1px solid #e8edf5}.evo .e-label{font-size:11px;color:#758197;font-weight:850;text-transform:uppercase}.evo .e-val{font-size:20px;font-weight:950;margin-top:6px}.evo .e-delta{font-size:11px;margin-top:4px;font-weight:800}.pos{color:#0b8157}.neg{color:#bd2637}.neutral{color:#758197}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sim-controls{display:grid;grid-template-columns:1fr 110px;gap:8px 12px;align-items:center}.sim-controls label{font-size:12px;font-weight:800}.sim-controls input{width:100%;padding:8px;border:1px solid #d7dfeb;border-radius:9px;text-align:right}.sim-result{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.sim-box{padding:12px;border-radius:11px;background:#f5f8fd;text-align:center}.sim-box b{display:block;font-size:22px}.alert-list{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.alert-item{padding:10px 11px;border-radius:10px;background:#f7f9fc;font-size:12px;font-weight:750}
+.pdf-switch{display:flex;gap:6px;align-items:center}.pdf-switch select{padding:8px 9px;border:1px solid #d9e1ec;border-radius:9px;background:#fff;font-weight:750}
+.pdf-only-title{display:none}
+@media(max-width:1000px){.intel-strip,.sim-grid{grid-template-columns:1fr}.evolution-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.diag-actions,.alert-list{grid-template-columns:1fr}.evolution-grid{grid-template-columns:1fr 1fr}.sim-result{grid-template-columns:1fr}}
+@media print{
+  .pdf-only-title{display:block;font-size:22px;font-weight:950;margin-bottom:12px}
+  body[data-pdf="executivo"] #individualDeep,
+  body[data-pdf="executivo"] #simulatorCard{display:none!important}
+  body[data-pdf="polo"] #individualDeep,
+  body[data-pdf="polo"] #simulatorCard{display:none!important}
+}
+
+
+.gap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.gap-card{border:1px solid #e5ebf4;border-radius:13px;padding:13px;background:#fbfdff}
+.gap-card .glabel{font-size:11px;text-transform:uppercase;color:#738097;font-weight:900;letter-spacing:.04em}
+.gap-card .gvalue{font-size:21px;font-weight:950;margin:5px 0}.gap-card .gsub{font-size:11px;color:#7a869a;line-height:1.35}
+.gap-ok{color:#0b8157}.gap-warn{color:#a36a00}.gap-bad{color:#bd2637}
+.date-control{border:1px solid #d9e1ec;border-radius:9px;padding:8px 10px;background:#fff;font-weight:700;color:#26344f}
+@media(max-width:900px){.gap-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.gap-grid{grid-template-columns:1fr}}
+
+
+@media print{
+  body[data-pdf="geral"] #tab-gerencial,
+  body[data-pdf="geral"] #tab-faltantes,
+  body[data-pdf="geral"] #tab-diretoria,
+  body[data-pdf="sp"] #tab-gerencial,
+  body[data-pdf="sp"] #tab-faltantes,
+  body[data-pdf="sp"] #tab-diretoria,
+  body[data-pdf="rj"] #tab-gerencial,
+  body[data-pdf="rj"] #tab-faltantes,
+  body[data-pdf="rj"] #tab-diretoria{display:block!important}
+
+  body[data-pdf="geral"] #tab-individual,
+  body[data-pdf="sp"] #tab-individual,
+  body[data-pdf="rj"] #tab-individual{display:none!important}
+
+  body[data-pdf="consultor"] #tab-individual{display:block!important}
+  body[data-pdf="consultor"] #tab-gerencial,
+  body[data-pdf="consultor"] #tab-faltantes,
+  body[data-pdf="consultor"] #tab-diretoria{display:none!important}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📊</div>
+  <div class="headcopy"><b>Dashboard Performance Zheos</b><small>Scoring Mensal • Performance + Atuação</small></div>
+  <div class="top-actions">
+    <span id="periodBadge" class="badge">Ago/2026 • referência</span>
+    <div class="pdf-switch no-print"><select id="pdfMode">
+<option value="geral">PDF Geral (RJ + SP)</option>
+<option value="sp">PDF Equipe SP</option>
+<option value="rj">PDF Equipe RJ</option>
+<option value="consultor">PDF Consultor</option>
+</select><button class="btn ghost" onclick="printReport()">🧾 Gerar PDF</button></div>
+  </div>
+</header>
+
+<main class="shell"><div id="pdfTitle" class="pdf-only-title"></div>
+  <div class="hero">
+    <div>
+      <div class="mini" style="text-transform:uppercase;font-weight:900;letter-spacing:.08em;color:#2860ad">Performance Comercial</div>
+      <h1>Visão 360° dos times RJ e SP</h1>
+      <p>Acompanhe resultado, atuação, ranking e pontos de atenção do time inteiro ou abra a visão de um consultor específico.</p>
+    </div>
+    <div class="mark">⚡</div>
+  </div>
+
+  <div class="tabs no-print">
+    <button class="tab active" data-tab="gerencial">📈 Gerencial</button>
+    <button class="tab" data-tab="faltantes">🎯 Metas & Faltantes</button>
+    <button class="tab" data-tab="individual">👤 Individual</button>
+    <button class="tab" data-tab="diretoria">🏛️ Diretoria</button>
+    <button class="tab" data-tab="dados">📂 Dados</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group"><b>Time:</b>
+      <div class="seg" id="regionSeg">
+        <button class="active" data-region="GERAL">RJ + SP</button>
+        <button data-region="RJ">Time RJ</button>
+        <button data-region="SP">Time SP</button>
+      </div>
+    </div>
+    <div class="consultant-filter">
+      <b>Consultor:</b>
+      <select id="globalConsultant"><option value="TODOS">Todos os consultores</option></select>
+    </div>
+    <div id="statusBadge" class="badge ok">✓ Setembro 04/09 carregado • Score e Acionáveis D-2</div>
+  </div>
+
+  <section id="tab-gerencial">
+    <div class="intel-strip">
+      <div class="card priority-card">
+        <div class="eyebrow">🔥 Prioridade do dia</div>
+        <h2 id="priorityTitle">—</h2>
+        <p id="priorityText">—</p>
+        <div class="priority-number" id="priorityNumber"></div>
+      </div>
+      <div class="card diagnosis-card">
+        <div class="diagnosis-main"><div class="diag-icon" id="diagIcon">🟡</div>
+          <div><div class="diag-title" id="diagTitle">Diagnóstico</div><div class="diag-copy" id="diagCopy">—</div></div>
+        </div>
+        <div class="diag-actions" id="diagActions"></div>
+      </div>
+    </div>
+    <div class="grid kpis">
+      <div class="card kpi"><div class="label">Score médio</div><div class="value" id="kScore">—</div><div class="sub">máximo 10 pts</div></div>
+      <div class="card kpi"><div class="label">TPV Total</div><div class="value" id="kTpv">—</div><div class="sub" id="kTpvSub">—</div></div>
+      <div class="card kpi"><div class="label">Meta TPV</div><div class="value" id="kMeta">—</div><div class="sub" id="kMetaSub">—</div></div>
+      <div class="card kpi"><div class="label">Net Churn</div><div class="value" id="kChurn">—</div><div class="sub">consolidado da carteira</div></div>
+      <div class="card kpi"><div class="label">Acionáveis</div><div class="value" id="kAcion">—</div><div class="sub">revertidos / tarefas</div></div>
+      <div class="card kpi"><div class="label">Consultores</div><div class="value" id="kPeople">—</div><div class="sub" id="kPeopleSub">—</div></div>
+    </div>
+
+    <div class="grid cols2">
+      <div class="card section">
+        <h2>🏆 Ranking geral dos consultores</h2>
+        <div class="scroll"><table><thead><tr><th>#</th><th>Consultor</th><th>Destaque</th><th>Regional</th><th class="num">Score</th><th class="num">Resultado /7</th><th class="num">Atuação /3</th><th class="num">TPV</th><th class="num">Net Churn</th><th class="num">Acionáveis</th></tr></thead><tbody id="rankBody"></tbody></table></div>
+      </div>
+      <div class="grid">
+        <div class="card section">
+          <h2>🚦 Onde precisa atuar</h2>
+          <div id="actions"></div>
+        </div>
+        <div class="card proj">
+          <h2>📅 Setembro/2026 • Projeção</h2>
+          <div id="projectionBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid cols3" style="margin-top:14px">
+      <div class="card region-card" id="rjCard"></div>
+      <div class="card region-card" id="spCard"></div>
+      <div class="card section">
+        <h2>🎯 Estrutura do Score</h2>
+        <div class="barline"><b>Resultado</b><div class="bar"><i style="width:70%"></i></div><b>7 pts</b></div>
+        <div class="barline"><b>Atuação</b><div class="bar"><i style="width:30%"></i></div><b>3 pts</b></div>
+        <div class="mini">Piso Atuação: Awareness > 30%. Piso Resultado: bloco ≥ 2,49 pts.</div>
+      </div>
+    </div>
+
+    <div class="card section" style="margin-top:14px">
+      <h2>⭐ Barra visual de Score</h2>
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:12px"><div><span class="mini">Recorte atual</span><div style="font-size:28px;font-weight:950" id="scoreBarValue">—</div></div><div class="mini">0 → crítico &nbsp;|&nbsp; 10 → excelência</div></div>
+      <div class="score-track"><span class="score-dot" id="scoreDot" style="left:0%"></span></div>
+      <div class="score-scale"><span>0</span><span>2,49</span><span>5</span><span>7</span><span>10</span></div>
+    </div>
+
+    <div class="card section" style="margin-top:14px">
+      <h2>📈 Evolução mensal • Agosto → Setembro</h2>
+      <div id="evolutionBox"></div>
+    </div>
+
+    <div class="grid sim-grid" style="margin-top:14px" id="individualDeep">
+      <div class="card section">
+        <h2>🔔 Alertas automáticos</h2>
+        <div class="alert-list" id="autoAlerts"></div>
+      </div>
+      <div class="card section" id="simulatorCard">
+        <h2>🎮 Simulador de Score</h2>
+        <div class="mini" style="margin-bottom:12px">Simule um cenário comercial e veja a faixa projetada. Para visão individual, selecione um consultor no filtro do topo.</div>
+        <div class="sim-controls">
+          <label>TPV (% da referência)</label><input id="simTpv" type="number" step="0.1" value="100">
+          <label>Net Churn (%)</label><input id="simChurn" type="number" step="0.1" value="-3.4">
+          <label>Acionáveis realizados</label><input id="simAcion" type="number" step="1" value="10">
+        </div>
+        <div class="sim-result">
+          <div class="sim-box"><span class="mini">Resultado</span><b id="simResult">—</b><span class="mini">/ 7</span></div>
+          <div class="sim-box"><span class="mini">Atuação atual</span><b id="simAct">—</b><span class="mini">/ 3</span></div>
+          <div class="sim-box"><span class="mini">Score final</span><b id="simTotal">—</b><span class="mini">/ 10</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="tab-faltantes" class="hidden">
+    <div class="card section">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <h2>🎯 Metas & Faltantes por consultor</h2>
+          <div class="mini">Awareness usa a base ativa do mês atual. Churn usa a base ativa do mês passado. Metas de faixa: Awareness T1 = 47,5%, Churn T1 = −2%, Agenda T1 = 65%, Produtividade = 6/dia. Score e Acionáveis seguem D-2.</div>
+        </div>
+        <span class="badge" id="gapDateBadge">Data-base 04/09/2026</span>
+      </div>
+      <div class="scroll" style="margin-top:12px">
+        <table>
+          <thead><tr>
+            <th>Consultor</th><th>Regional</th>
+            <th class="num">Awareness</th><th class="num">Falta Awareness</th>
+            <th class="num">Churn atual</th><th class="num">Recuperar p/ meta</th>
+            <th class="num">Falta TPV</th><th class="num">Falta Acionáveis</th>
+            <th class="num">Falta Agenda</th><th class="num">Prod/dia</th>
+          </tr></thead>
+          <tbody id="gapsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-individual" class="hidden">
+    <div class="card section">
+      <div class="consultant-head">
+        <div><div class="mini">Consultor</div><select id="personSelect"></select></div>
+        <div style="margin-left:auto" class="center"><div class="mini">Score Geral</div><div class="bigscore" id="personScore">—</div></div>
+      </div>
+      <div id="personMetrics" style="margin-top:10px"></div>
+      <div id="personGaps" class="gap-grid"></div>
+    </div>
+  </section>
+
+  <section id="tab-diretoria" class="hidden">
+    <div class="grid cols2">
+      <div class="card section">
+        <h2>🏛️ Resumo Executivo</h2>
+        <div id="execSummary"></div>
+      </div>
+      <div class="card section">
+        <h2>RJ × SP</h2>
+        <table><thead><tr><th>Regional</th><th class="num">Consultores</th><th class="num">Score</th><th class="num">TPV</th><th class="num">% Meta</th><th class="num">Net Churn</th></tr></thead><tbody id="regionCompare"></tbody></table>
+      </div>
+    </div>
+    <div class="card section" style="margin-top:14px">
+      <h2>📌 Visão consolidada de indicadores</h2>
+      <div id="indicatorBars"></div>
+    </div>
+  </section>
+
+  <section id="tab-dados" class="hidden">
+    <div class="card section">
+      <h2>📂 Carregar planilhas do mês</h2>
+      <p class="mini">Selecione os arquivos do mesmo formato usado hoje. O dashboard identifica cada planilha pelas colunas e recalcula tudo no navegador.</p>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 14px">
+        <b>📅 Data-base:</b>
+        <input class="date-control" type="date" id="dataBaseDateInput" value="2026-09-04">
+        <span class="mini">Usada para dias úteis, ritmo e projeções. Ao carregar uma planilha com DD-MM no nome, o painel tenta atualizar esta data automaticamente.</span>
+      </div>
+      <div class="upload-grid">
+        <div class="upload"><b>💰 TPV</b><span class="mini" id="st-tpv">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="tpv"></div>
+        <div class="upload"><b>🎯 Acionáveis</b><span class="mini" id="st-acionaveis">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="acionaveis"></div>
+        <div class="upload"><b>📉 Net Churn</b><span class="mini" id="st-netchurn">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="netchurn"></div>
+        <div class="upload"><b>⚡ Visitas / Produtividade</b><span class="mini" id="st-visitas">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="visitas"></div>
+        <div class="upload"><b>📅 Agenda</b><span class="mini" id="st-agenda">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="agenda"></div>
+        <div class="upload"><b>📊 Awareness</b><span class="mini" id="st-awareness">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="awareness"></div>
+        <div class="upload"><b>✅ Score</b><span class="mini" id="st-score">Base 04/09</span><input type="file" accept=".xlsx,.xls" data-kind="score"></div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn primary" onclick="refreshAll()">⚙️ Processar Dashboard</button>
+        <button class="btn soft" onclick="resetData()">↩️ Restaurar setembro</button>
+      </div>
+    </div>
+    <div class="card section" style="margin-top:14px">
+      <h2>📋 Tabela de Referência de Tiers</h2>
+      <div class="scroll">
+      <table><thead><tr><th>KPI</th><th>Bloco</th><th>Peso</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>Crítico</th></tr></thead>
+      <tbody>
+        <tr><td>Variação TPV vs mês anterior</td><td>Resultado</td><td>3,0</td><td>≥104%</td><td>≥102%</td><td>≥100%</td><td>≥95%</td><td>≥90%</td><td>&lt;90%</td></tr>
+        <tr><td>Acionáveis %</td><td>Resultado</td><td>1,0</td><td>≥100%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>&lt;100%</td></tr>
+        <tr><td>% Net Churn</td><td>Resultado</td><td>3,0</td><td>≥−2%</td><td>≥−2,5%</td><td>≥−3,4%</td><td>≥−4,5%</td><td>≥−5,5%</td><td>&lt;−5,5%</td></tr>
+        <tr><td>% Awareness</td><td>Atuação</td><td>1,5</td><td>≥47,5%</td><td>≥42,75%</td><td>≥40,38%</td><td>≥38%</td><td>≥35,63%</td><td>&lt;35,63%</td></tr>
+        <tr><td>% Aderência à Agenda</td><td>Atuação</td><td>1,0</td><td>≥65%</td><td>≥58,5%</td><td>≥55,25%</td><td>≥52%</td><td>≥48,75%</td><td>&lt;48,75%</td></tr>
+        <tr><td>Prod. Média / Dia Útil</td><td>Atuação</td><td>0,5</td><td>≥6,0</td><td>—</td><td>—</td><td>—</td><td>—</td><td>&lt;6,0</td></tr>
+      </tbody></table></div>
+      <p class="mini">Regionalização fixa: RJ = Rosane, Vinicius, Elen, Hugo, Lívia, Laura e Nilton. Márcia é excluída. Demais consultores = SP.</p>
+    </div>
+  </section>
+</main>
+<div class="footer">Dashboard Performance Zheos • Setembro/2026 • Awareness = base ativa mês atual • Churn = base ativa mês passado • Score e Acionáveis D-2 • dados processados localmente no navegador</div>
+
+<script>
+const DEFAULT = {"visitas": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE prod": "0.5", "Visitas": "309", "Visitas efetivas": "259", "Sellers visitados": "205", "Visitas por dia útil": "15", "Visitas efetivas por dia útil": "12.3", "Prod média por dia útil": "9.8"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE prod": "0.5", "Visitas": "295", "Visitas efetivas": "190", "Sellers visitados": "146", "Visitas por dia útil": "14", "Visitas efetivas por dia útil": "9.0", "Prod média por dia útil": "6.7"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE prod": "0.5", "Visitas": "187", "Visitas efetivas": "187", "Sellers visitados": "157", "Visitas por dia útil": "9", "Visitas efetivas por dia útil": "8.9", "Prod média por dia útil": "6.8"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE prod": "0.5", "Visitas": "223", "Visitas efetivas": "223", "Sellers visitados": "202", "Visitas por dia útil": "11", "Visitas efetivas por dia útil": "10.6", "Prod média por dia útil": "9.3"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE prod": "0.5", "Visitas": "244", "Visitas efetivas": "238", "Sellers visitados": "204", "Visitas por dia útil": "12", "Visitas efetivas por dia útil": "11.3", "Prod média por dia útil": "9.3"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE prod": "0.5", "Visitas": "190", "Visitas efetivas": "176", "Sellers visitados": "143", "Visitas por dia útil": "9", "Visitas efetivas por dia útil": "8.4", "Prod média por dia útil": "6.8"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE prod": "0.0", "Visitas": "23", "Visitas efetivas": "23", "Sellers visitados": "20", "Visitas por dia útil": "1", "Visitas efetivas por dia útil": "1.1", "Prod média por dia útil": "0.9"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE prod": "0.5", "Visitas": "222", "Visitas efetivas": "205", "Sellers visitados": "175", "Visitas por dia útil": "11", "Visitas efetivas por dia útil": "9.8", "Prod média por dia útil": "7.4"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE prod": "0.5", "Visitas": "392", "Visitas efetivas": "392", "Sellers visitados": "188", "Visitas por dia útil": "19", "Visitas efetivas por dia útil": "18.7", "Prod média por dia útil": "9.0"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE prod": "0.5", "Visitas": "199", "Visitas efetivas": "198", "Sellers visitados": "166", "Visitas por dia útil": "9", "Visitas efetivas por dia útil": "9.4", "Prod média por dia útil": "7.8"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE prod": "0.5", "Visitas": "382", "Visitas efetivas": "380", "Sellers visitados": "199", "Visitas por dia útil": "18", "Visitas efetivas por dia útil": "18.1", "Prod média por dia útil": "9.4"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE prod": "0.5", "Visitas": "243", "Visitas efetivas": "243", "Sellers visitados": "197", "Visitas por dia útil": "12", "Visitas efetivas por dia útil": "11.6", "Prod média por dia útil": "8.6"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE prod": "0.5", "Visitas": "401", "Visitas efetivas": "401", "Sellers visitados": "288", "Visitas por dia útil": "19", "Visitas efetivas por dia útil": "19.1", "Prod média por dia útil": "13.5"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE prod": "0.5", "Visitas": "290", "Visitas efetivas": "280", "Sellers visitados": "185", "Visitas por dia útil": "14", "Visitas efetivas por dia útil": "13.3", "Prod média por dia útil": "8.8"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE prod": "0.5", "Visitas": "298", "Visitas efetivas": "294", "Sellers visitados": "206", "Visitas por dia útil": "14", "Visitas efetivas por dia útil": "14.0", "Prod média por dia útil": "9.6"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE prod": "0.5", "Visitas": "432", "Visitas efetivas": "432", "Sellers visitados": "262", "Visitas por dia útil": "21", "Visitas efetivas por dia útil": "20.6", "Prod média por dia útil": "11.9"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE prod": "0.5", "Visitas": "261", "Visitas efetivas": "261", "Sellers visitados": "247", "Visitas por dia útil": "12", "Visitas efetivas por dia útil": "12.4", "Prod média por dia útil": "10.8"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE prod": "0.5", "Visitas": "186", "Visitas efetivas": "186", "Sellers visitados": "138", "Visitas por dia útil": "9", "Visitas efetivas por dia útil": "8.9", "Prod média por dia útil": "6.6"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE prod": "0.5", "Visitas": "203", "Visitas efetivas": "203", "Sellers visitados": "170", "Visitas por dia útil": "10", "Visitas efetivas por dia útil": "9.7", "Prod média por dia útil": "7.8"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE prod": "0.5", "Visitas": "222", "Visitas efetivas": "222", "Sellers visitados": "173", "Visitas por dia útil": "11", "Visitas efetivas por dia útil": "10.6", "Prod média por dia útil": "8.2"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE prod": "0.5", "Visitas": "225", "Visitas efetivas": "225", "Sellers visitados": "170", "Visitas por dia útil": "11", "Visitas efetivas por dia útil": "10.7", "Prod média por dia útil": "8.0"}], "awareness": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE pesquisa": "1.5", "Sellers visitados": "205", "Sellers que responderam pesquisa": "160", "%Awareness": "53.16%"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE pesquisa": "0.6", "Sellers visitados": "146", "Sellers que responderam pesquisa": "113", "%Awareness": "38.97%"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE pesquisa": "1.5", "Sellers visitados": "157", "Sellers que responderam pesquisa": "113", "%Awareness": "49.56%"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE pesquisa": "1.5", "Sellers visitados": "202", "Sellers que responderam pesquisa": "149", "%Awareness": "55.19%"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE pesquisa": "1.5", "Sellers visitados": "204", "Sellers que responderam pesquisa": "153", "%Awareness": "49.04%"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE pesquisa": "1.2", "Sellers visitados": "143", "Sellers que responderam pesquisa": "142", "%Awareness": "47.33%"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE pesquisa": "0.0", "Sellers visitados": "20", "Sellers que responderam pesquisa": "0", "%Awareness": "0.00%"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE pesquisa": "1.2", "Sellers visitados": "175", "Sellers que responderam pesquisa": "106", "%Awareness": "47.53%"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE pesquisa": "0.0", "Sellers visitados": "188", "Sellers que responderam pesquisa": "86", "%Awareness": "31.27%"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE pesquisa": "0.6", "Sellers visitados": "166", "Sellers que responderam pesquisa": "120", "%Awareness": "41.38%"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE pesquisa": "1.5", "Sellers visitados": "199", "Sellers que responderam pesquisa": "128", "%Awareness": "47.76%"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE pesquisa": "1.2", "Sellers visitados": "197", "Sellers que responderam pesquisa": "164", "%Awareness": "47.54%"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE pesquisa": "1.5", "Sellers visitados": "288", "Sellers que responderam pesquisa": "190", "%Awareness": "51.08%"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE pesquisa": "1.5", "Sellers visitados": "185", "Sellers que responderam pesquisa": "143", "%Awareness": "49.48%"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE pesquisa": "0.6", "Sellers visitados": "206", "Sellers que responderam pesquisa": "139", "%Awareness": "40.64%"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE pesquisa": "0.0", "Sellers visitados": "262", "Sellers que responderam pesquisa": "103", "%Awareness": "33.77%"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE pesquisa": "1.2", "Sellers visitados": "247", "Sellers que responderam pesquisa": "136", "%Awareness": "43.73%"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE pesquisa": "1.5", "Sellers visitados": "138", "Sellers que responderam pesquisa": "104", "%Awareness": "52.00%"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE pesquisa": "1.2", "Sellers visitados": "170", "Sellers que responderam pesquisa": "158", "%Awareness": "47.88%"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE pesquisa": "1.5", "Sellers visitados": "173", "Sellers que responderam pesquisa": "147", "%Awareness": "49.66%"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE pesquisa": "0.9", "Sellers visitados": "170", "Sellers que responderam pesquisa": "108", "%Awareness": "48.21%"}], "agenda": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE aderência à agenda": "1.0", "Sellers agendados": "183", "Sellers aderentes à agenda": "133", "Sellers visitados": "205", "%Aderência à agenda": "73%"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE aderência à agenda": "0.6", "Sellers agendados": "181", "Sellers aderentes à agenda": "106", "Sellers visitados": "146", "%Aderência à agenda": "59%"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE aderência à agenda": "1.0", "Sellers agendados": "161", "Sellers aderentes à agenda": "134", "Sellers visitados": "157", "%Aderência à agenda": "83%"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE aderência à agenda": "1.0", "Sellers agendados": "192", "Sellers aderentes à agenda": "167", "Sellers visitados": "202", "%Aderência à agenda": "87%"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE aderência à agenda": "1.0", "Sellers agendados": "220", "Sellers aderentes à agenda": "193", "Sellers visitados": "204", "%Aderência à agenda": "88%"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE aderência à agenda": "1.0", "Sellers agendados": "195", "Sellers aderentes à agenda": "137", "Sellers visitados": "143", "%Aderência à agenda": "70%"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE aderência à agenda": "0.0", "Sellers agendados": "83", "Sellers aderentes à agenda": "15", "Sellers visitados": "20", "%Aderência à agenda": "18%"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE aderência à agenda": "1.0", "Sellers agendados": "168", "Sellers aderentes à agenda": "124", "Sellers visitados": "175", "%Aderência à agenda": "74%"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE aderência à agenda": "1.0", "Sellers agendados": "160", "Sellers aderentes à agenda": "157", "Sellers visitados": "188", "%Aderência à agenda": "98%"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE aderência à agenda": "1.0", "Sellers agendados": "206", "Sellers aderentes à agenda": "155", "Sellers visitados": "166", "%Aderência à agenda": "75%"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE aderência à agenda": "1.0", "Sellers agendados": "161", "Sellers aderentes à agenda": "122", "Sellers visitados": "199", "%Aderência à agenda": "76%"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE aderência à agenda": "1.0", "Sellers agendados": "174", "Sellers aderentes à agenda": "157", "Sellers visitados": "197", "%Aderência à agenda": "90%"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE aderência à agenda": "1.0", "Sellers agendados": "237", "Sellers aderentes à agenda": "235", "Sellers visitados": "288", "%Aderência à agenda": "99%"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE aderência à agenda": "1.0", "Sellers agendados": "196", "Sellers aderentes à agenda": "167", "Sellers visitados": "185", "%Aderência à agenda": "85%"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE aderência à agenda": "1.0", "Sellers agendados": "171", "Sellers aderentes à agenda": "148", "Sellers visitados": "206", "%Aderência à agenda": "87%"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE aderência à agenda": "1.0", "Sellers agendados": "167", "Sellers aderentes à agenda": "138", "Sellers visitados": "262", "%Aderência à agenda": "83%"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE aderência à agenda": "1.0", "Sellers agendados": "209", "Sellers aderentes à agenda": "205", "Sellers visitados": "247", "%Aderência à agenda": "98%"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE aderência à agenda": "1.0", "Sellers agendados": "161", "Sellers aderentes à agenda": "116", "Sellers visitados": "138", "%Aderência à agenda": "72%"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE aderência à agenda": "1.0", "Sellers agendados": "181", "Sellers aderentes à agenda": "150", "Sellers visitados": "170", "%Aderência à agenda": "83%"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE aderência à agenda": "1.0", "Sellers agendados": "160", "Sellers aderentes à agenda": "122", "Sellers visitados": "173", "%Aderência à agenda": "76%"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE aderência à agenda": "1.0", "Sellers agendados": "172", "Sellers aderentes à agenda": "126", "Sellers visitados": "170", "%Aderência à agenda": "73%"}], "acionaveis": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "18", "Total Acionáveis %Tarefa-Revertido": "150.00%"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "24", "Total Acionáveis %Tarefa-Revertido": "240.00%"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "13", "Total Acionáveis %Tarefa-Revertido": "130.00%"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "32", "Total Acionáveis %Tarefa-Revertido": "320.00%"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "22", "Total Acionáveis %Tarefa-Revertido": "183.33%"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "21", "Total Acionáveis %Tarefa-Revertido": "210.00%"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE acionáveis comerciais": "0.0", "Total Acionáveis Tarefas": "6", "Total Acionáveis Revertido": "0", "Total Acionáveis %Tarefa-Revertido": "0.00%"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "11", "Total Acionáveis %Tarefa-Revertido": "110.00%"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "17", "Total Acionáveis %Tarefa-Revertido": "170.00%"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "22", "Total Acionáveis %Tarefa-Revertido": "220.00%"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "17", "Total Acionáveis %Tarefa-Revertido": "170.00%"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "15", "Total Acionáveis %Tarefa-Revertido": "125.00%"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "33", "Total Acionáveis %Tarefa-Revertido": "275.00%"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "26", "Total Acionáveis %Tarefa-Revertido": "260.00%"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "17", "Total Acionáveis %Tarefa-Revertido": "141.67%"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "20", "Total Acionáveis %Tarefa-Revertido": "166.67%"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "24", "Total Acionáveis %Tarefa-Revertido": "200.00%"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "8", "Total Acionáveis Revertido": "8", "Total Acionáveis %Tarefa-Revertido": "100.00%"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "12", "Total Acionáveis Revertido": "21", "Total Acionáveis %Tarefa-Revertido": "175.00%"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "21", "Total Acionáveis %Tarefa-Revertido": "210.00%"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE acionáveis comerciais": "1.0", "Total Acionáveis Tarefas": "10", "Total Acionáveis Revertido": "22", "Total Acionáveis %Tarefa-Revertido": "220.00%"}], "netchurn": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE net churn": "1.8", "Sellers ativos mês atual": "301", "Sellers ativos mês passado": "309", "Sellers em churn": "10", "Sellers Reativados": "2", "%Net churn": "-2.6%"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE net churn": "2.4", "Sellers ativos mês atual": "290", "Sellers ativos mês passado": "297", "Sellers em churn": "10", "Sellers Reativados": "3", "%Net churn": "-2.4%"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE net churn": "1.8", "Sellers ativos mês atual": "228", "Sellers ativos mês passado": "236", "Sellers em churn": "9", "Sellers Reativados": "1", "%Net churn": "-3.4%"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE net churn": "2.4", "Sellers ativos mês atual": "270", "Sellers ativos mês passado": "276", "Sellers em churn": "10", "Sellers Reativados": "4", "%Net churn": "-2.2%"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE net churn": "1.8", "Sellers ativos mês atual": "312", "Sellers ativos mês passado": "322", "Sellers em churn": "12", "Sellers Reativados": "2", "%Net churn": "-3.1%"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE net churn": "1.2", "Sellers ativos mês atual": "300", "Sellers ativos mês passado": "313", "Sellers em churn": "14", "Sellers Reativados": "1", "%Net churn": "-4.2%"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE net churn": "3.0", "Sellers ativos mês atual": "3", "Sellers ativos mês passado": "3", "Sellers em churn": "0", "Sellers Reativados": "0", "%Net churn": "0.0%"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE net churn": "1.8", "Sellers ativos mês atual": "223", "Sellers ativos mês passado": "229", "Sellers em churn": "10", "Sellers Reativados": "4", "%Net churn": "-2.6%"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE net churn": "1.2", "Sellers ativos mês atual": "275", "Sellers ativos mês passado": "285", "Sellers em churn": "12", "Sellers Reativados": "2", "%Net churn": "-3.5%"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE net churn": "1.8", "Sellers ativos mês atual": "290", "Sellers ativos mês passado": "298", "Sellers em churn": "10", "Sellers Reativados": "2", "%Net churn": "-2.7%"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE net churn": "1.2", "Sellers ativos mês atual": "268", "Sellers ativos mês passado": "278", "Sellers em churn": "11", "Sellers Reativados": "1", "%Net churn": "-3.6%"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE net churn": "1.8", "Sellers ativos mês atual": "345", "Sellers ativos mês passado": "355", "Sellers em churn": "11", "Sellers Reativados": "1", "%Net churn": "-2.8%"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE net churn": "1.8", "Sellers ativos mês atual": "372", "Sellers ativos mês passado": "383", "Sellers em churn": "16", "Sellers Reativados": "5", "%Net churn": "-2.9%"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE net churn": "2.4", "Sellers ativos mês atual": "289", "Sellers ativos mês passado": "295", "Sellers em churn": "8", "Sellers Reativados": "2", "%Net churn": "-2.0%"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE net churn": "1.2", "Sellers ativos mês atual": "342", "Sellers ativos mês passado": "354", "Sellers em churn": "14", "Sellers Reativados": "2", "%Net churn": "-3.4%"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE net churn": "1.8", "Sellers ativos mês atual": "305", "Sellers ativos mês passado": "313", "Sellers em churn": "10", "Sellers Reativados": "2", "%Net churn": "-2.6%"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE net churn": "1.8", "Sellers ativos mês atual": "311", "Sellers ativos mês passado": "320", "Sellers em churn": "11", "Sellers Reativados": "2", "%Net churn": "-2.8%"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE net churn": "3.0", "Sellers ativos mês atual": "200", "Sellers ativos mês passado": "201", "Sellers em churn": "3", "Sellers Reativados": "2", "%Net churn": "-0.5%"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE net churn": "3.0", "Sellers ativos mês atual": "330", "Sellers ativos mês passado": "333", "Sellers em churn": "10", "Sellers Reativados": "7", "%Net churn": "-0.9%"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE net churn": "3.0", "Sellers ativos mês atual": "296", "Sellers ativos mês passado": "299", "Sellers em churn": "8", "Sellers Reativados": "5", "%Net churn": "-1.0%"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE net churn": "1.8", "Sellers ativos mês atual": "224", "Sellers ativos mês passado": "230", "Sellers em churn": "11", "Sellers Reativados": "5", "%Net churn": "-2.6%"}], "tpv": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE tpv": "0.6", "Objetivo TPV Total Atual": 8983855, "% Objetivo TPV": "97.3500%", "TPV Total mês atual": 8745611, "TPV Total mês passado": 8962769, "TPV médio mês atual": 29055, "TPV médio mês passado": 29006, "Variação de TPV versus mês passado": "97.5800%"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 9017941, "% Objetivo TPV": "102.2000%", "TPV Total mês atual": 9216540, "TPV Total mês passado": 9601046, "TPV médio mês atual": 31781, "TPV médio mês passado": 32327, "Variação de TPV versus mês passado": "96.0000%"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 7008696, "% Objetivo TPV": "99.5600%", "TPV Total mês atual": 6977846, "TPV Total mês passado": 7225538, "TPV médio mês atual": 30605, "TPV médio mês passado": 30617, "Variação de TPV versus mês passado": "96.5700%"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 9438288, "% Objetivo TPV": "99.0000%", "TPV Total mês atual": 9343463, "TPV Total mês passado": 9622124, "TPV médio mês atual": 34605, "TPV médio mês passado": 34863, "Variação de TPV versus mês passado": "97.1000%"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE tpv": "3.0", "Objetivo TPV Total Atual": 10849343, "% Objetivo TPV": "124.0200%", "TPV Total mês atual": 13455229, "TPV Total mês passado": 11219420, "TPV médio mês atual": 43126, "TPV médio mês passado": 34843, "Variação de TPV versus mês passado": "119.9300%"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 9267280, "% Objetivo TPV": "97.7600%", "TPV Total mês atual": 9059501, "TPV Total mês passado": 9567761, "TPV médio mês atual": 30198, "TPV médio mês passado": 30568, "Variação de TPV versus mês passado": "94.6900%"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE tpv": "0.0", "Objetivo TPV Total Atual": "-", "% Objetivo TPV": "-", "TPV Total mês atual": 114286, "TPV Total mês passado": 100221, "TPV médio mês atual": 38095, "TPV médio mês passado": 33407, "Variação de TPV versus mês passado": "114.0300%"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE tpv": "0.0", "Objetivo TPV Total Atual": 8696082, "% Objetivo TPV": "87.2400%", "TPV Total mês atual": 7586499, "TPV Total mês passado": 8111828, "TPV médio mês atual": 34020, "TPV médio mês passado": 35423, "Variação de TPV versus mês passado": "93.5200%"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 8751981, "% Objetivo TPV": "101.0900%", "TPV Total mês atual": 8847002, "TPV Total mês passado": 8872566, "TPV médio mês atual": 32171, "TPV médio mês passado": 31132, "Variação de TPV versus mês passado": "99.7100%"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 10378607, "% Objetivo TPV": "100.0200%", "TPV Total mês atual": 10381090, "TPV Total mês passado": 10447754, "TPV médio mês atual": 35797, "TPV médio mês passado": 35060, "Variação de TPV versus mês passado": "99.3600%"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE tpv": "1.8", "Objetivo TPV Total Atual": 8624362, "% Objetivo TPV": "104.4100%", "TPV Total mês atual": 9004722, "TPV Total mês passado": 8856685, "TPV médio mês atual": 33600, "TPV médio mês passado": 31859, "Variação de TPV versus mês passado": "101.6700%"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE tpv": "0.0", "Objetivo TPV Total Atual": 13787876, "% Objetivo TPV": "91.4600%", "TPV Total mês atual": 12609869, "TPV Total mês passado": 13404903, "TPV médio mês atual": 36550, "TPV médio mês passado": 37760, "Variação de TPV versus mês passado": "94.0700%"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE tpv": "0.6", "Objetivo TPV Total Atual": 12955106, "% Objetivo TPV": "94.4600%", "TPV Total mês atual": 12237589, "TPV Total mês passado": 12992771, "TPV médio mês atual": 32897, "TPV médio mês passado": 33924, "Variação de TPV versus mês passado": "94.1900%"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE tpv": "0.6", "Objetivo TPV Total Atual": 8743978, "% Objetivo TPV": "95.6300%", "TPV Total mês atual": 8361625, "TPV Total mês passado": 8598037, "TPV médio mês atual": 28933, "TPV médio mês passado": 29146, "Variação de TPV versus mês passado": "97.2500%"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE tpv": "0.0", "Objetivo TPV Total Atual": 13610771, "% Objetivo TPV": "90.8400%", "TPV Total mês atual": 12363813, "TPV Total mês passado": 13612385, "TPV médio mês atual": 36152, "TPV médio mês passado": 38453, "Variação de TPV versus mês passado": "90.8300%"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 9804891, "% Objetivo TPV": "97.6100%", "TPV Total mês atual": 9570222, "TPV Total mês passado": 9337269, "TPV médio mês atual": 31378, "TPV médio mês passado": 29832, "Variação de TPV versus mês passado": "102.4900%"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 9890635, "% Objetivo TPV": "100.8700%", "TPV Total mês atual": 9976479, "TPV Total mês passado": 10194184, "TPV médio mês atual": 32079, "TPV médio mês passado": 31857, "Variação de TPV versus mês passado": "97.8600%"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 6591875, "% Objetivo TPV": "99.9100%", "TPV Total mês atual": 6585706, "TPV Total mês passado": 6734459, "TPV médio mês atual": 32929, "TPV médio mês passado": 33505, "Variação de TPV versus mês passado": "97.7900%"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE tpv": "0.6", "Objetivo TPV Total Atual": 11708113, "% Objetivo TPV": "96.9600%", "TPV Total mês atual": 11351618, "TPV Total mês passado": 11812020, "TPV médio mês atual": 34399, "TPV médio mês passado": 35472, "Variação de TPV versus mês passado": "96.1000%"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 10057339, "% Objetivo TPV": "101.4400%", "TPV Total mês atual": 10202071, "TPV Total mês passado": 10063711, "TPV médio mês atual": 34466, "TPV médio mês passado": 33658, "Variação de TPV versus mês passado": "101.3700%"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE tpv": "1.2", "Objetivo TPV Total Atual": 6740997, "% Objetivo TPV": "101.1000%", "TPV Total mês atual": 6814880, "TPV Total mês passado": 6832428, "TPV médio mês atual": 30424, "TPV médio mês passado": 29706, "Variação de TPV versus mês passado": "99.7400%"}], "score": [{"Mês": "202608", "Executivo": "VINICIUS FREIRE", "ID Carteira": "94268663", "SCORE geral": "6.4", "SCORE tpv": "0.6", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "JOAO CARLOS NUNES", "ID Carteira": "725166904", "SCORE geral": "6.3", "SCORE tpv": "1.2", "SCORE net churn": "2.4", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "0.6", "SCORE pesquisa": "0.60", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "593382060", "SCORE geral": "7.0", "SCORE tpv": "1.2", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "TALITA FRANCISO ALVES", "ID Carteira": "493588661", "SCORE geral": "7.6", "SCORE tpv": "1.2", "SCORE net churn": "2.4", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "LEILA LELES DA CUNHA", "ID Carteira": "445047141", "SCORE geral": "8.8", "SCORE tpv": "3.0", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "ROSANE BARRETO", "ID Carteira": "427982066", "SCORE geral": "6.1", "SCORE tpv": "1.2", "SCORE net churn": "1.2", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.20", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "Maria Lucia Bruschi de Melo", "ID Carteira": "3573480481", "SCORE geral": "3.0", "SCORE tpv": "0.0", "SCORE net churn": "3.0", "SCORE acionáveis comerciais": "0.0", "SCORE aderência à agenda": "0.0", "SCORE pesquisa": "0.00", "SCORE prod": "0.0"}, {"Mês": "202608", "Executivo": "HELIO DE JESUS SANTOS", "ID Carteira": "322507443", "SCORE geral": "5.5", "SCORE tpv": "0.0", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.20", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "LAURA GONÇALVES GUILHERME", "ID Carteira": "3205415512", "SCORE geral": "4.9", "SCORE tpv": "1.2", "SCORE net churn": "1.2", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "0.00", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "JULIANA FREITAS", "ID Carteira": "316319386", "SCORE geral": "6.1", "SCORE tpv": "1.2", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "0.60", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "LIVIA GABRIELE SANTOS DA SILVA", "ID Carteira": "244752624", "SCORE geral": "7.0", "SCORE tpv": "1.8", "SCORE net churn": "1.2", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "TAUANNY MARIANGELA MORAES MONTEIRO", "ID Carteira": "2368958662", "SCORE geral": "5.5", "SCORE tpv": "0.0", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.20", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "VANESSA PEREIRA DE ALMEIDA", "ID Carteira": "2271593368", "SCORE geral": "6.4", "SCORE tpv": "0.6", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "MARCIA PEREIRA", "ID Carteira": "221080385", "SCORE geral": "7.0", "SCORE tpv": "0.6", "SCORE net churn": "2.4", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "GABRIELA ARAUJO BELCHIOR", "ID Carteira": "2154474811", "SCORE geral": "4.3", "SCORE tpv": "0.0", "SCORE net churn": "1.2", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "0.60", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "ADRIANO DA ANUNCIAÇÃO", "ID Carteira": "213640069", "SCORE geral": "5.5", "SCORE tpv": "1.2", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "0.00", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "SÂMARA SALES DE SOUZA", "ID Carteira": "1935765419", "SCORE geral": "6.7", "SCORE tpv": "1.2", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.20", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "HUGO DA SILVA MELO", "ID Carteira": "1775963269", "SCORE geral": "8.2", "SCORE tpv": "1.2", "SCORE net churn": "3.0", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "PAMELLA MARIANGELA AMARAL", "ID Carteira": "1419214554", "SCORE geral": "7.3", "SCORE tpv": "0.6", "SCORE net churn": "3.0", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.20", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "ELEN PEREIRA PROENCA", "ID Carteira": "116323667", "SCORE geral": "8.2", "SCORE tpv": "1.2", "SCORE net churn": "3.0", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "1.50", "SCORE prod": "0.5"}, {"Mês": "202608", "Executivo": "ELIS SILVEIRA CRICCA SCUOTEGUAZZA", "ID Carteira": "103063539", "SCORE geral": "6.4", "SCORE tpv": "1.2", "SCORE net churn": "1.8", "SCORE acionáveis comerciais": "1.0", "SCORE aderência à agenda": "1.0", "SCORE pesquisa": "0.90", "SCORE prod": "0.5"}]};
+const SEPTEMBER = {"visitas":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE prod":"0.0","Visitas":"12","Visitas efetivas":"9","Sellers visitados":"9","Visitas por dia útil":"6","Visitas efetivas por dia útil":"4.5","Prod média por dia útil":"4.5"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE prod":"0.0","Visitas":"28","Visitas efetivas":"12","Sellers visitados":"11","Visitas por dia útil":"14","Visitas efetivas por dia útil":"6.0","Prod média por dia útil":"5.5"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE prod":"0.5","Visitas":"14","Visitas efetivas":"14","Sellers visitados":"13","Visitas por dia útil":"7","Visitas efetivas por dia útil":"7.0","Prod média por dia útil":"6.5"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE prod":"0.0","Visitas":"12","Visitas efetivas":"12","Sellers visitados":"11","Visitas por dia útil":"6","Visitas efetivas por dia útil":"6.0","Prod média por dia útil":"5.5"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE prod":"0.5","Visitas":"22","Visitas efetivas":"21","Sellers visitados":"19","Visitas por dia útil":"11","Visitas efetivas por dia útil":"10.5","Prod média por dia útil":"9.5"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE prod":"0.5","Visitas":"20","Visitas efetivas":"17","Sellers visitados":"15","Visitas por dia útil":"10","Visitas efetivas por dia útil":"8.5","Prod média por dia útil":"7.5"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE prod":"0.0","Visitas":"0","Visitas efetivas":"0","Sellers visitados":"0","Visitas por dia útil":"0","Visitas efetivas por dia útil":"0.0","Prod média por dia útil":"0.0"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE prod":"0.5","Visitas":"16","Visitas efetivas":"16","Sellers visitados":"13","Visitas por dia útil":"8","Visitas efetivas por dia útil":"8.0","Prod média por dia útil":"6.5"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE prod":"0.5","Visitas":"29","Visitas efetivas":"28","Sellers visitados":"22","Visitas por dia útil":"15","Visitas efetivas por dia útil":"14.0","Prod média por dia útil":"11.0"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE prod":"0.5","Visitas":"18","Visitas efetivas":"15","Sellers visitados":"13","Visitas por dia útil":"9","Visitas efetivas por dia útil":"7.5","Prod média por dia útil":"6.5"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE prod":"0.0","Visitas":"0","Visitas efetivas":"0","Sellers visitados":"0","Visitas por dia útil":"0","Visitas efetivas por dia útil":"0.0","Prod média por dia útil":"0.0"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE prod":"0.0","Visitas":"9","Visitas efetivas":"9","Sellers visitados":"7","Visitas por dia útil":"5","Visitas efetivas por dia útil":"4.5","Prod média por dia útil":"3.5"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE prod":"0.5","Visitas":"27","Visitas efetivas":"27","Sellers visitados":"24","Visitas por dia útil":"14","Visitas efetivas por dia útil":"13.5","Prod média por dia útil":"12.0"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE prod":"0.0","Visitas":"0","Visitas efetivas":"0","Sellers visitados":"0","Visitas por dia útil":"0","Visitas efetivas por dia útil":"0.0","Prod média por dia útil":"0.0"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE prod":"0.5","Visitas":"27","Visitas efetivas":"26","Sellers visitados":"24","Visitas por dia útil":"14","Visitas efetivas por dia útil":"13.0","Prod média por dia útil":"12.0"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE prod":"0.5","Visitas":"27","Visitas efetivas":"27","Sellers visitados":"20","Visitas por dia útil":"14","Visitas efetivas por dia útil":"13.5","Prod média por dia útil":"10.0"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE prod":"0.5","Visitas":"19","Visitas efetivas":"19","Sellers visitados":"19","Visitas por dia útil":"10","Visitas efetivas por dia útil":"9.5","Prod média por dia útil":"9.5"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE prod":"0.5","Visitas":"21","Visitas efetivas":"21","Sellers visitados":"16","Visitas por dia útil":"11","Visitas efetivas por dia útil":"10.5","Prod média por dia útil":"8.0"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE prod":"0.0","Visitas":"6","Visitas efetivas":"6","Sellers visitados":"6","Visitas por dia útil":"3","Visitas efetivas por dia útil":"3.0","Prod média por dia útil":"3.0"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE prod":"0.5","Visitas":"31","Visitas efetivas":"31","Sellers visitados":"30","Visitas por dia útil":"16","Visitas efetivas por dia útil":"15.5","Prod média por dia útil":"15.0"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE prod":"0.5","Visitas":"15","Visitas efetivas":"15","Sellers visitados":"14","Visitas por dia útil":"8","Visitas efetivas por dia útil":"7.5","Prod média por dia útil":"7.0"}],"awareness":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE pesquisa":"1.2","Sellers visitados":"9","Sellers que responderam pesquisa":"88","%Awareness":"45.36%"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE pesquisa":"0.0","Sellers visitados":"11","Sellers que responderam pesquisa":"62","%Awareness":"31.16%"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE pesquisa":"0.6","Sellers visitados":"13","Sellers que responderam pesquisa":"61","%Awareness":"40.67%"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE pesquisa":"0.0","Sellers visitados":"11","Sellers que responderam pesquisa":"70","%Awareness":"29.54%"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE pesquisa":"0.3","Sellers visitados":"19","Sellers que responderam pesquisa":"92","%Awareness":"39.83%"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE pesquisa":"0.6","Sellers visitados":"15","Sellers que responderam pesquisa":"75","%Awareness":"40.32%"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE pesquisa":"0.0","Sellers visitados":"0","Sellers que responderam pesquisa":"0","%Awareness":"0.00%"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE pesquisa":"0.0","Sellers visitados":"13","Sellers que responderam pesquisa":"62","%Awareness":"25.41%"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE pesquisa":"0.0","Sellers visitados":"22","Sellers que responderam pesquisa":"61","%Awareness":"29.90%"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE pesquisa":"0.3","Sellers visitados":"13","Sellers que responderam pesquisa":"87","%Awareness":"39.01%"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE pesquisa":"0.6","Sellers visitados":"0","Sellers que responderam pesquisa":"82","%Awareness":"41.84%"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE pesquisa":"0.6","Sellers visitados":"7","Sellers que responderam pesquisa":"101","%Awareness":"42.44%"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE pesquisa":"0.6","Sellers visitados":"24","Sellers que responderam pesquisa":"101","%Awareness":"40.08%"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE pesquisa":"0.3","Sellers visitados":"0","Sellers que responderam pesquisa":"80","%Awareness":"38.28%"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE pesquisa":"0.0","Sellers visitados":"24","Sellers que responderam pesquisa":"72","%Awareness":"32.58%"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE pesquisa":"0.0","Sellers visitados":"20","Sellers que responderam pesquisa":"55","%Awareness":"27.09%"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE pesquisa":"0.0","Sellers visitados":"19","Sellers que responderam pesquisa":"85","%Awareness":"26.73%"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE pesquisa":"0.0","Sellers visitados":"16","Sellers que responderam pesquisa":"67","%Awareness":"36.02%"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE pesquisa":"0.6","Sellers visitados":"6","Sellers que responderam pesquisa":"95","%Awareness":"42.41%"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE pesquisa":"1.2","Sellers visitados":"30","Sellers que responderam pesquisa":"101","%Awareness":"49.51%"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE pesquisa":"0.0","Sellers visitados":"14","Sellers que responderam pesquisa":"66","%Awareness":"27.85%"}],"agenda":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE aderência à agenda":"0.0","Sellers agendados":"18","Sellers aderentes à agenda":"7","Sellers visitados":"9","%Aderência à agenda":"39%"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"5","Sellers visitados":"11","%Aderência à agenda":"25%"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"10","Sellers visitados":"13","%Aderência à agenda":"50%"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE aderência à agenda":"0.0","Sellers agendados":"21","Sellers aderentes à agenda":"9","Sellers visitados":"11","%Aderência à agenda":"43%"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE aderência à agenda":"1.0","Sellers agendados":"25","Sellers aderentes à agenda":"19","Sellers visitados":"19","%Aderência à agenda":"76%"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE aderência à agenda":"1.0","Sellers agendados":"18","Sellers aderentes à agenda":"15","Sellers visitados":"15","%Aderência à agenda":"83%"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"0","Sellers visitados":"0","%Aderência à agenda":"0%"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"5","Sellers visitados":"13","%Aderência à agenda":"25%"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE aderência à agenda":"1.0","Sellers agendados":"20","Sellers aderentes à agenda":"16","Sellers visitados":"22","%Aderência à agenda":"80%"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE aderência à agenda":"0.6","Sellers agendados":"21","Sellers aderentes à agenda":"13","Sellers visitados":"13","%Aderência à agenda":"62%"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"0","Sellers visitados":"0","%Aderência à agenda":"0%"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"6","Sellers visitados":"7","%Aderência à agenda":"30%"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE aderência à agenda":"1.0","Sellers agendados":"23","Sellers aderentes à agenda":"23","Sellers visitados":"24","%Aderência à agenda":"100%"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE aderência à agenda":"0.0","Sellers agendados":"32","Sellers aderentes à agenda":"0","Sellers visitados":"0","%Aderência à agenda":"0%"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE aderência à agenda":"1.0","Sellers agendados":"20","Sellers aderentes à agenda":"16","Sellers visitados":"24","%Aderência à agenda":"80%"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"1","Sellers visitados":"20","%Aderência à agenda":"5%"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE aderência à agenda":"1.0","Sellers agendados":"20","Sellers aderentes à agenda":"18","Sellers visitados":"19","%Aderência à agenda":"90%"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE aderência à agenda":"0.0","Sellers agendados":"24","Sellers aderentes à agenda":"12","Sellers visitados":"16","%Aderência à agenda":"50%"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"5","Sellers visitados":"6","%Aderência à agenda":"25%"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE aderência à agenda":"0.0","Sellers agendados":"20","Sellers aderentes à agenda":"3","Sellers visitados":"30","%Aderência à agenda":"15%"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE aderência à agenda":"0.2","Sellers agendados":"20","Sellers aderentes à agenda":"11","Sellers visitados":"14","%Aderência à agenda":"55%"}],"acionaveis":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"12.50%"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"6","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"2","Total Acionáveis %Tarefa-Revertido":"20.00%"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"12","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"8","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"12.50%"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"1","Total Acionáveis %Tarefa-Revertido":"10.00%"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE acionáveis comerciais":"0.0","Total Acionáveis Tarefas":"10","Total Acionáveis Revertido":"0","Total Acionáveis %Tarefa-Revertido":"0.00%"}],"netchurn":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE net churn":"0.0","Sellers ativos mês atual":"194","Sellers ativos mês passado":"301","Sellers em churn":"107","Sellers Reativados":"0","%Net churn":"-35.6%"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE net churn":"0.0","Sellers ativos mês atual":"199","Sellers ativos mês passado":"303","Sellers em churn":"104","Sellers Reativados":"0","%Net churn":"-34.3%"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE net churn":"0.0","Sellers ativos mês atual":"150","Sellers ativos mês passado":"228","Sellers em churn":"78","Sellers Reativados":"0","%Net churn":"-34.2%"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE net churn":"0.0","Sellers ativos mês atual":"237","Sellers ativos mês passado":"364","Sellers em churn":"127","Sellers Reativados":"0","%Net churn":"-34.9%"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE net churn":"0.0","Sellers ativos mês atual":"231","Sellers ativos mês passado":"323","Sellers em churn":"92","Sellers Reativados":"0","%Net churn":"-28.5%"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE net churn":"0.0","Sellers ativos mês atual":"186","Sellers ativos mês passado":"300","Sellers em churn":"115","Sellers Reativados":"1","%Net churn":"-38.0%"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE net churn":"0.0","Sellers ativos mês atual":"87","Sellers ativos mês passado":"143","Sellers em churn":"56","Sellers Reativados":"0","%Net churn":"-39.2%"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE net churn":"0.0","Sellers ativos mês atual":"244","Sellers ativos mês passado":"381","Sellers em churn":"138","Sellers Reativados":"1","%Net churn":"-36.0%"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE net churn":"0.0","Sellers ativos mês atual":"204","Sellers ativos mês passado":"276","Sellers em churn":"72","Sellers Reativados":"0","%Net churn":"-26.1%"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE net churn":"0.0","Sellers ativos mês atual":"223","Sellers ativos mês passado":"301","Sellers em churn":"78","Sellers Reativados":"0","%Net churn":"-25.9%"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE net churn":"0.0","Sellers ativos mês atual":"196","Sellers ativos mês passado":"291","Sellers em churn":"95","Sellers Reativados":"0","%Net churn":"-32.7%"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE net churn":"0.0","Sellers ativos mês atual":"238","Sellers ativos mês passado":"361","Sellers em churn":"123","Sellers Reativados":"0","%Net churn":"-34.1%"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE net churn":"0.0","Sellers ativos mês atual":"252","Sellers ativos mês passado":"372","Sellers em churn":"120","Sellers Reativados":"0","%Net churn":"-32.3%"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE net churn":"0.0","Sellers ativos mês atual":"209","Sellers ativos mês passado":"294","Sellers em churn":"85","Sellers Reativados":"0","%Net churn":"-28.9%"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE net churn":"0.0","Sellers ativos mês atual":"221","Sellers ativos mês passado":"350","Sellers em churn":"129","Sellers Reativados":"0","%Net churn":"-36.9%"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE net churn":"0.0","Sellers ativos mês atual":"203","Sellers ativos mês passado":"305","Sellers em churn":"102","Sellers Reativados":"0","%Net churn":"-33.4%"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE net churn":"0.0","Sellers ativos mês atual":"318","Sellers ativos mês passado":"496","Sellers em churn":"179","Sellers Reativados":"1","%Net churn":"-35.9%"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE net churn":"0.0","Sellers ativos mês atual":"186","Sellers ativos mês passado":"257","Sellers em churn":"71","Sellers Reativados":"0","%Net churn":"-27.6%"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE net churn":"0.0","Sellers ativos mês atual":"224","Sellers ativos mês passado":"340","Sellers em churn":"116","Sellers Reativados":"0","%Net churn":"-34.1%"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE net churn":"0.0","Sellers ativos mês atual":"204","Sellers ativos mês passado":"296","Sellers em churn":"93","Sellers Reativados":"1","%Net churn":"-31.1%"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE net churn":"0.0","Sellers ativos mês atual":"237","Sellers ativos mês passado":"351","Sellers em churn":"114","Sellers Reativados":"0","%Net churn":"-32.5%"}],"tpv":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE tpv":"0.0","Objetivo TPV Total Atual":8535348,"% Objetivo TPV":"5.9800%","TPV Total mês atual":510586,"TPV Total mês passado":8745611,"TPV médio mês atual":2632,"TPV médio mês passado":40117,"Variação de TPV versus mês passado":"5.8400%"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE tpv":"0.0","Objetivo TPV Total Atual":9126682,"% Objetivo TPV":"6.5400%","TPV Total mês atual":596929,"TPV Total mês passado":9804862,"TPV médio mês atual":3000,"TPV médio mês passado":54471,"Variação de TPV versus mês passado":"6.0900%"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE tpv":"0.0","Objetivo TPV Total Atual":6658796,"% Objetivo TPV":"6.3500%","TPV Total mês atual":422999,"TPV Total mês passado":6977846,"TPV médio mês atual":2820,"TPV médio mês passado":52465,"Variação de TPV versus mês passado":"6.0600%"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE tpv":"0.0","Objetivo TPV Total Atual":11817488,"% Objetivo TPV":"5.0500%","TPV Total mês atual":597155,"TPV Total mês passado":12295692,"TPV médio mês atual":2520,"TPV médio mês passado":48987,"Variação de TPV versus mês passado":"4.8600%"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE tpv":"0.0","Objetivo TPV Total Atual":10841033,"% Objetivo TPV":"7.1200%","TPV Total mês atual":772134,"TPV Total mês passado":14016585,"TPV médio mês atual":3343,"TPV médio mês passado":69734,"Variação de TPV versus mês passado":"5.5100%"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE tpv":"0.0","Objetivo TPV Total Atual":8804623,"% Objetivo TPV":"5.7700%","TPV Total mês atual":508185,"TPV Total mês passado":9059501,"TPV médio mês atual":2732,"TPV médio mês passado":43766,"Variação de TPV versus mês passado":"5.6100%"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE tpv":"0.0","Objetivo TPV Total Atual":"-","% Objetivo TPV":"-","TPV Total mês atual":248019,"TPV Total mês passado":4088301,"TPV médio mês atual":2851,"TPV médio mês passado":52414,"Variação de TPV versus mês passado":"6.0700%"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE tpv":"0.0","Objetivo TPV Total Atual":13001271,"% Objetivo TPV":"4.9500%","TPV Total mês atual":643614,"TPV Total mês passado":12521988,"TPV médio mês atual":2638,"TPV médio mês passado":50902,"Variação de TPV versus mês passado":"5.1400%"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE tpv":"0.0","Objetivo TPV Total Atual":8366308,"% Objetivo TPV":"5.7800%","TPV Total mês atual":483781,"TPV Total mês passado":8900953,"TPV médio mês atual":2371,"TPV médio mês passado":39560,"Variação de TPV versus mês passado":"5.4400%"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE tpv":"0.0","Objetivo TPV Total Atual":10200698,"% Objetivo TPV":"6.2500%","TPV Total mês atual":637036,"TPV Total mês passado":10739198,"TPV médio mês atual":2857,"TPV médio mês passado":50419,"Variação de TPV versus mês passado":"5.9300%"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE tpv":"0.0","Objetivo TPV Total Atual":8778328,"% Objetivo TPV":"6.4600%","TPV Total mês atual":566700,"TPV Total mês passado":9542246,"TPV médio mês atual":2891,"TPV médio mês passado":44799,"Variação de TPV versus mês passado":"5.9400%"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE tpv":"0.0","Objetivo TPV Total Atual":13618341,"% Objetivo TPV":"5.5900%","TPV Total mês atual":760936,"TPV Total mês passado":13142560,"TPV médio mês atual":3197,"TPV médio mês passado":55454,"Variação de TPV versus mês passado":"5.7900%"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE tpv":"0.0","Objetivo TPV Total Atual":12308339,"% Objetivo TPV":"6.1200%","TPV Total mês atual":753537,"TPV Total mês passado":12237589,"TPV médio mês atual":2990,"TPV médio mês passado":54389,"Variação de TPV versus mês passado":"6.1600%"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE tpv":"0.0","Objetivo TPV Total Atual":"-","% Objetivo TPV":"-","TPV Total mês atual":491641,"TPV Total mês passado":8526533,"TPV médio mês atual":2352,"TPV médio mês passado":40603,"Variação de TPV versus mês passado":"5.7700%"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE tpv":"0.0","Objetivo TPV Total Atual":13220674,"% Objetivo TPV":"5.6600%","TPV Total mês atual":748508,"TPV Total mês passado":12668424,"TPV médio mês atual":3387,"TPV médio mês passado":58650,"Variação de TPV versus mês passado":"5.9100%"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE tpv":"0.0","Objetivo TPV Total Atual":9315394,"% Objetivo TPV":"5.0300%","TPV Total mês atual":468870,"TPV Total mês passado":9570222,"TPV médio mês atual":2310,"TPV médio mês passado":43700,"Variação de TPV versus mês passado":"4.9000%"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE tpv":"0.0","Objetivo TPV Total Atual":15238991,"% Objetivo TPV":"6.0000%","TPV Total mês atual":913920,"TPV Total mês passado":16037131,"TPV médio mês atual":2874,"TPV médio mês passado":51900,"Variação de TPV versus mês passado":"5.7000%"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE tpv":"0.0","Objetivo TPV Total Atual":7936419,"% Objetivo TPV":"6.6700%","TPV Total mês atual":529738,"TPV Total mês passado":8334582,"TPV médio mês atual":2848,"TPV médio mês passado":45544,"Variação de TPV versus mês passado":"6.3600%"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE tpv":"0.0","Objetivo TPV Total Atual":11435239,"% Objetivo TPV":"6.2500%","TPV Total mês atual":714259,"TPV Total mês passado":11679632,"TPV médio mês atual":3189,"TPV médio mês passado":52849,"Variação de TPV versus mês passado":"6.1200%"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE tpv":"0.0","Objetivo TPV Total Atual":9555239,"% Objetivo TPV":"7.1100%","TPV Total mês atual":679767,"TPV Total mês passado":10202071,"TPV médio mês atual":3332,"TPV médio mês passado":46373,"Variação de TPV versus mês passado":"6.6600%"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE tpv":"0.0","Objetivo TPV Total Atual":10389247,"% Objetivo TPV":"6.3100%","TPV Total mês atual":655595,"TPV Total mês passado":10966522,"TPV médio mês atual":2766,"TPV médio mês passado":48099,"Variação de TPV versus mês passado":"5.9800%"}],"score":[{"Mês":"202609","Executivo":"VINICIUS FREIRE","ID Carteira":"94268663","SCORE geral":"1.2","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"1.20","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"JOAO CARLOS NUNES","ID Carteira":"725166904","SCORE geral":"0.0","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"RAPHAELA SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"593382060","SCORE geral":"1.1","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.60","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"TALITA FRANCISO ALVES","ID Carteira":"493588661","SCORE geral":"0.0","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"LEILA LELES DA CUNHA","ID Carteira":"445047141","SCORE geral":"1.8","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.30","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"ROSANE BARRETO","ID Carteira":"427982066","SCORE geral":"2.1","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.60","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"Maria Lucia Bruschi de Melo","ID Carteira":"3573480481","SCORE geral":"0.0","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"HELIO DE JESUS SANTOS","ID Carteira":"322507443","SCORE geral":"0.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"LAURA GONÇALVES GUILHERME","ID Carteira":"3205415512","SCORE geral":"1.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"JULIANA FREITAS","ID Carteira":"316319386","SCORE geral":"1.4","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.6","SCORE pesquisa":"0.30","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"LIVIA GABRIELE SANTOS DA SILVA","ID Carteira":"244752624","SCORE geral":"0.6","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.60","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"TAUANNY MARIANGELA MORAES MONTEIRO","ID Carteira":"2368958662","SCORE geral":"0.6","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.60","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"VANESSA PEREIRA DE ALMEIDA","ID Carteira":"2271593368","SCORE geral":"2.1","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.60","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"MARCIA PEREIRA","ID Carteira":"221080385","SCORE geral":"0.3","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.30","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"GABRIELA ARAUJO BELCHIOR","ID Carteira":"2154474811","SCORE geral":"1.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"ADRIANO DA ANUNCIAÇÃO","ID Carteira":"213640069","SCORE geral":"0.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"SÂMARA SALES DE SOUZA","ID Carteira":"1935765419","SCORE geral":"1.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"1.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"HUGO DA SILVA MELO","ID Carteira":"1775963269","SCORE geral":"0.5","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.00","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"PAMELLA MARIANGELA AMARAL","ID Carteira":"1419214554","SCORE geral":"0.6","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"0.60","SCORE prod":"0.0"},{"Mês":"202609","Executivo":"ELEN PEREIRA PROENCA","ID Carteira":"116323667","SCORE geral":"1.7","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.0","SCORE pesquisa":"1.20","SCORE prod":"0.5"},{"Mês":"202609","Executivo":"ELIS SILVEIRA CRICCA SCUOTEGUAZZA","ID Carteira":"103063539","SCORE geral":"0.7","SCORE tpv":"0.0","SCORE net churn":"0.0","SCORE acionáveis comerciais":"0.0","SCORE aderência à agenda":"0.2","SCORE pesquisa":"0.00","SCORE prod":"0.5"}]};
+let DB = JSON.parse(JSON.stringify(SEPTEMBER));
+let currentRegion = "GERAL";
+let currentConsultant = "TODOS";
+
+let dataBaseDate = "2026-09-04";
+const TARGET = { awareness:.475, churnLoss:.02, agenda:.65, prod:6 };
+
+function dateBR(iso){
+  const [y,m,d]=String(iso||"").split("-");
+  return y&&m&&d?`${d}/${m}/${y}`:"—";
+}
+function dataBaseObj(){
+  const p=String(dataBaseDate||"2026-09-04").split("-").map(Number);
+  return new Date(p[0],p[1]-1,p[2],12,0,0);
+}
+function setDataBaseDate(iso){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) return;
+  dataBaseDate=iso;
+  const inp=document.getElementById("dataBaseDateInput"); if(inp) inp.value=iso;
+  const b=document.getElementById("gapDateBadge"); if(b) b.textContent="Data-base "+dateBR(iso);
+}
+function inferDateFromFilename(name){
+  const s=String(name||"");
+  const m=s.match(/(?:^|\s|_)(\d{2})-(\d{2})(?:-(\d{2,4}))?/);
+  if(!m) return;
+  const y=m[3] ? (m[3].length===2?"20"+m[3]:m[3]) : "2026";
+  setDataBaseDate(`${y}-${m[2]}-${m[1]}`);
+}
+function awarenessTargetCount(x){ return Math.ceil(num(x.ativos)*TARGET.awareness); }
+function awarenessGapCount(x){ return Math.max(0, awarenessTargetCount(x)-num(x.pesquisaResp)); }
+function netLostCount(x){ return Math.max(0, num(x.churnN)-num(x.reat)); }
+function allowedChurnLossCount(x){ return Math.floor(num(x.ativosPrev)*TARGET.churnLoss); }
+function churnRecoveryGap(x){ return Math.max(0, netLostCount(x)-allowedChurnLossCount(x)); }
+function agendaTargetCount(x){ return Math.ceil(num(x.agendados)*TARGET.agenda); }
+function agendaGapCount(x){ return Math.max(0, agendaTargetCount(x)-num(x.aderentes)); }
+function acionGapCount(x){ return Math.max(0, num(x.tarefas)-num(x.revert)); }
+function tpvGapValue(x){ return Math.max(0, num(x.obj)-num(x.tpv)); }
+function gapClass(v){ return v<=0?"gap-ok":v<=5?"gap-warn":"gap-bad"; }
+
+const RJ_FIRST = ["ROSANE","VINICIUS","ELEN","HUGO","LIVIA","LÍVIA","LAURA","NILTON"];
+const EXCLUDE = ["MARCIA","MÁRCIA"];
+
+function norm(s){return String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim()}
+function regional(name){
+  const n=norm(name);
+  if(EXCLUDE.some(x=>n.includes(norm(x)))) return "EXCLUIR";
+  return RJ_FIRST.some(x=>n.startsWith(norm(x)+" ") || n===norm(x)) ? "RJ":"SP";
+}
+function num(v){
+  if(typeof v==="number") return v;
+  if(v==null||v==="") return 0;
+  let s=String(v).trim().replace(/\s/g,"");
+  if(s.endsWith("%")) return parseFloat(s.replace("%","").replace(",", "."))/100;
+  if(s.includes(",") && s.includes(".")) s=s.replace(/\./g,"").replace(",",".");
+  else s=s.replace(",",".");
+  const x=parseFloat(s); return isNaN(x)?0:x;
+}
+function pct(v,d=1){return (100*num(v)).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%"}
+function money(v){
+  const n=num(v), abs=Math.abs(n);
+  if(abs>=1e6) return "R$ "+(n/1e6).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+" mi";
+  if(abs>=1e3) return "R$ "+(n/1e3).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:0})+" mil";
+  return n.toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
+}
+function firstKey(row, candidates){
+  for(const c of candidates) if(Object.prototype.hasOwnProperty.call(row,c)) return c;
+  const ks=Object.keys(row), cn=candidates.map(norm);
+  return ks.find(k=>cn.includes(norm(k)));
+}
+function get(row, candidates){const k=firstKey(row,candidates);return k?row[k]:null}
+function mapById(kind){
+  const m=new Map();
+  (DB[kind]||[]).forEach(r=>{const id=String(get(r,["ID Carteira"])??"").trim(); if(id)m.set(id,r)});
+  return m;
+}
+function consultants(){
+  const kinds=["score","tpv","netchurn","acionaveis","awareness","agenda","visitas"];
+  const maps=Object.fromEntries(kinds.map(k=>[k,mapById(k)]));
+  const ids=new Set(); kinds.forEach(k=>maps[k].forEach((_,id)=>ids.add(id)));
+  let arr=[];
+  ids.forEach(id=>{
+    const rows={}; kinds.forEach(k=>rows[k]=maps[k].get(id)||{});
+    const name=get(rows.score,["Executivo"])||get(rows.tpv,["Executivo"])||get(rows.visitas,["Executivo"])||"Sem nome";
+    const reg=regional(name); if(reg==="EXCLUIR") return;
+    const sc=num(get(rows.score,["SCORE geral"]));
+    const sTpv=num(get(rows.score,["SCORE tpv"]));
+    const sNet=num(get(rows.score,["SCORE net churn"]));
+    const sAcion=num(get(rows.score,["SCORE acionáveis comerciais"]));
+    const sAgenda=num(get(rows.score,["SCORE aderência à agenda"]));
+    const sPesquisa=num(get(rows.score,["SCORE pesquisa"]));
+    const sProd=num(get(rows.score,["SCORE prod"]));
+    const resultScore=sTpv+sNet+sAcion, actScore=sAgenda+sPesquisa+sProd;
+    const tpv=num(get(rows.tpv,["TPV Total mês atual"]));
+    const tpvPrev=num(get(rows.tpv,["TPV Total mês passado"]));
+    const obj=num(get(rows.tpv,["Objetivo TPV Total Atual"]));
+    const churn=num(get(rows.netchurn,["%Net churn","% Net churn"]));
+    const awareness=num(get(rows.awareness,["%Awareness","% Awareness"]));
+    const agenda=num(get(rows.agenda,["%Aderência à agenda","% Aderência à agenda"]));
+    const prod=num(get(rows.visitas,["Prod média por dia útil"]));
+    const tarefas=num(get(rows.acionaveis,["Total Acionáveis Tarefas"]));
+    const revert=num(get(rows.acionaveis,["Total Acionáveis Revertido"]));
+    const acion=tarefas?revert/tarefas:num(get(rows.acionaveis,["Total Acionáveis %Tarefa-Revertido"]));
+    const ativos=num(get(rows.netchurn,["Sellers ativos mês atual"]));
+    const ativosPrev=num(get(rows.netchurn,["Sellers ativos mês passado"]));
+    const churnN=num(get(rows.netchurn,["Sellers em churn"]));
+    const reat=num(get(rows.netchurn,["Sellers Reativados"]));
+    const pesquisaResp=num(get(rows.awareness,["Sellers que responderam pesquisa"]));
+    const sellersAw=num(get(rows.awareness,["Sellers visitados"]));
+    const agendados=num(get(rows.agenda,["Sellers agendados"]));
+    const aderentes=num(get(rows.agenda,["Sellers aderentes à agenda"]));
+    const mes=String(get(rows.score,["Mês"])||get(rows.tpv,["Mês"])||"");
+    arr.push({id,name,reg,score:sc,resultScore,actScore,sTpv,sNet,sAcion,sAgenda,sPesquisa,sProd,tpv,tpvPrev,obj,churn,awareness,agenda,prod,acion,tarefas,revert,ativos,ativosPrev,churnN,reat,pesquisaResp,sellersAw,agendados,aderentes,mes,rows});
+  });
+  return arr;
+}
+function filtered(all,region=currentRegion){
+  let arr = region==="GERAL" ? all : all.filter(x=>x.reg===region);
+  if(currentConsultant!=="TODOS") arr = arr.filter(x=>x.id===currentConsultant);
+  return arr;
+}
+function agg(arr){
+  const sum=k=>arr.reduce((a,x)=>a+num(x[k]),0);
+  const avg=k=>arr.length?sum(k)/arr.length:0;
+  const tpv=sum("tpv"), prev=sum("tpvPrev"), obj=sum("obj"), ativos=sum("ativos"), ativosPrev=sum("ativosPrev");
+  const tarefas=sum("tarefas"), revert=sum("revert"), awDen=sum("sellersAw"), awNum=sum("pesquisaResp"), agDen=sum("agendados"), agNum=sum("aderentes");
+  return {
+    n:arr.length,score:avg("score"),resultScore:avg("resultScore"),actScore:avg("actScore"),tpv,obj,tpvGoal:obj?tpv/obj:0,tpvVar:prev?tpv/prev:0,
+    churn:ativosPrev?(ativos-ativosPrev)/ativosPrev:avg("churn"),
+    acion:tarefas?revert/tarefas:avg("acion"),
+    awareness:awDen?awNum/awDen:avg("awareness"),
+    agenda:agDen?agNum/agDen:avg("agenda"),
+    prod:avg("prod")
+  };
+}
+function scoreClass(v){return v>=8?"s-green":v>=6?"s-yellow":"s-red"}
+function updateConsultantFilter(){
+  const all = consultants();
+  const team = currentRegion==="GERAL" ? all : all.filter(x=>x.reg===currentRegion);
+  const sel = document.getElementById("globalConsultant");
+  if(!sel) return;
+  const prev = currentConsultant;
+  sel.innerHTML = `<option value="TODOS">Todos os consultores</option>` +
+    [...team].sort((a,b)=>a.name.localeCompare(b.name))
+      .map(x=>`<option value="${esc(x.id)}">${esc(x.name)} • ${x.reg}</option>`).join("");
+  if(prev!=="TODOS" && team.some(x=>x.id===prev)) sel.value=prev;
+  else { currentConsultant="TODOS"; sel.value="TODOS"; }
+}
+
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+
+
+function augConsultants(){
+  const now=DB; DB=JSON.parse(JSON.stringify(DEFAULT));
+  const a=consultants(); DB=now; return a;
+}
+function augById(id){ return augConsultants().find(x=>x.id===id); }
+function businessDaysInMonth(year,monthIndex){
+  let d=new Date(year,monthIndex+1,0).getDate(), n=0;
+  for(let i=1;i<=d;i++){const dt=new Date(year,monthIndex,i);if(dt.getDay()!=0&&dt.getDay()!=6 && !(year===2026&&monthIndex===8&&i===7))n++}
+  return n;
+}
+function elapsedBusinessDaysSep(){
+  const total=businessDaysInMonth(2026,8), now=dataBaseObj();
+  if(now<new Date(2026,8,1)) return {elapsed:0,total,remaining:total};
+  if(now>new Date(2026,8,30,23,59)) return {elapsed:total,total,remaining:0};
+  let e=0;for(let i=1;i<=now.getDate();i++){const dt=new Date(2026,8,i);if(dt.getDay()!=0&&dt.getDay()!=6&&i!==7)e++}
+  return {elapsed:e,total,remaining:total-e};
+}
+function diagnose(arr){
+  const a=agg(arr), mes=monthFromData(), days=elapsedBusinessDaysSep();
+  if(!arr.length) return {level:"yellow",icon:"🟡",title:"SEM DADOS",copy:"Não há consultores no recorte selecionado.",actions:[],priority:"Aguardar dados",priorityText:"Selecione outro recorte ou carregue uma base.",number:""};
+  if(mes!=="202609") return {level:"yellow",icon:"🟡",title:"BASE DE REFERÊNCIA",copy:"Agosto está carregado como fechamento de referência. O diagnóstico de ritmo será ativado automaticamente com a carga de setembro.",actions:["Base pronta para comparação Agosto → Setembro","Filtros e regras já configurados"],priority:"Preparar Setembro",priorityText:"Assim que a base 202609 entrar, o dashboard calculará ritmo, gap e projeção.",number:""};
+  const e=Math.max(1,days.elapsed), rem=days.remaining, pace=a.tpv/e, proj=pace*days.total, need=rem?Math.max(0,a.obj-a.tpv)/rem:0;
+  const ratio=a.obj?proj/a.obj:1;
+  const earlyMonth=days.elapsed<=3;
+  let level=earlyMonth?"yellow":(ratio>=1?"green":ratio>=.92?"yellow":"red");
+  let title=earlyMonth?"INÍCIO DE MÊS":(level==="green"?"NO CAMINHO":level==="yellow"?"ATENÇÃO":"CRÍTICO");
+  let icon=earlyMonth?"🔵":(level==="green"?"🟢":level==="yellow"?"🟡":"🔴");
+  let copy=earlyMonth
+    ?`Projeção preliminar com apenas ${days.elapsed} dia(s) útil(eis). Score e Acionáveis têm atualização D-2 e não devem ser tratados como zero.`
+    :(level==="green"
+      ?`O ritmo atual projeta ${money(proj)}, suficiente para alcançar a meta de ${money(a.obj)}.`
+      :`O ritmo atual projeta ${money(proj)} frente à meta de ${money(a.obj)}.`);
+  const actions=[];
+  if(a.tpv<a.obj) actions.push(`TPV: faltam ${money(Math.max(0,a.obj-a.tpv))}; necessário ${money(need)}/dia útil.`);
+  const awGap=arr.reduce((s,x)=>s+awarenessGapCount(x),0);
+  const chGap=arr.reduce((s,x)=>s+churnRecoveryGap(x),0);
+  if(awGap) actions.push(`Awareness: faltam ${awGap} resposta(s) para a faixa T1 de 47,5% da base ativa atual.`);
+  if(chGap) actions.push(`Churn: recuperar ${chGap} cliente(s) para chegar à faixa T1 de −2% sobre a base ativa do mês passado.`);
+  if(a.churn<-.034) actions.push(`Net Churn em ${pct(a.churn,2)}: priorizar retenção e reativação.`);
+  if(a.acion<1) actions.push(`Acionáveis em ${pct(a.acion,1)}: fechar ${Math.max(0,arr.reduce((s,x)=>s+x.tarefas-x.revert,0)).toFixed(0)} acionável(is).`);
+  if(a.awareness<=.30) actions.push(`Awareness abaixo do piso de 30%: risco de zerar o Bloco 1.`);
+  let priority="Manter ritmo", priorityText="Os principais indicadores estão sustentando a projeção.", number=`${money(pace)}/dia`;
+  if(a.awareness<=.30){priority="Recuperar Awareness";priorityText="O piso obrigatório de 30% está em risco. Priorize respostas de pesquisa.";number=pct(a.awareness,1);}
+  else if(a.tpv<a.obj && ratio<1){priority="Aumentar TPV";priorityText=`Restam ${days.remaining} dias úteis. Para buscar a meta, o time precisa elevar o ritmo diário.`;number=`${money(need)}/dia`;}
+  else if(a.acion<1){priority="Fechar Acionáveis";priorityText="Existem acionáveis ainda não revertidos no recorte atual.";number=`${pct(a.acion,1)} concluído`;}
+  else if(a.churn<-.034){priority="Retenção e reativação";priorityText="Net Churn é a maior oportunidade de proteção de score.";number=pct(a.churn,2);}
+  return {level,icon,title,copy,actions,priority,priorityText,number,pace,proj,need,days};
+}
+function renderIntelligence(arr){
+  const d=diagnose(arr), a=agg(arr);
+  document.getElementById("priorityTitle").textContent=d.priority;
+  document.getElementById("priorityText").textContent=d.priorityText;
+  document.getElementById("priorityNumber").textContent=d.number||"";
+  document.getElementById("diagIcon").textContent=d.icon;
+  document.getElementById("diagTitle").textContent=d.title;
+  document.getElementById("diagCopy").textContent=d.copy;
+  document.getElementById("diagActions").innerHTML=(d.actions.length?d.actions:["Nenhuma ação crítica no recorte atual."]).map(x=>`<div class="diag-chip">${esc(x)}</div>`).join("");
+  const hasScore=arr.some(x=>x.score>0 || x.resultScore>0 || x.actScore>0);
+  document.getElementById("scoreBarValue").textContent=hasScore?`${a.score.toFixed(1)} / 10`:"Aguardando D-2";
+  document.getElementById("scoreDot").style.left=hasScore?(Math.max(0,Math.min(100,a.score*10))+"%"):"0%";
+  renderEvolution(arr);
+  renderAlerts(arr,d);
+  seedSimulator(arr);
+}
+function renderEvolution(arr){
+  const box=document.getElementById("evolutionBox"), mes=monthFromData();
+  if(mes!=="202609"){box.innerHTML=`<div class="empty"><b>Agosto já está salvo como referência.</b><br><span class="mini">Ao carregar Setembro, esta área mostrará automaticamente a evolução de Score, TPV, Net Churn, Acionáveis e posição no ranking.</span></div>`;return}
+  const cur=agg(arr);
+  const ids=new Set(arr.map(x=>x.id)); const aug=agg(augConsultants().filter(x=>ids.has(x.id)));
+  const delta=(v,b,goodUp=true,fmt=x=>x.toFixed(1))=>{
+    const dif=v-b, cls=Math.abs(dif)<1e-9?"neutral":((dif>0)==goodUp?"pos":"neg");
+    return `<span class="${cls}">${dif>0?"+":""}${fmt(dif)}</span>`;
+  };
+  const cards=[
+    ["Score",cur.score.toFixed(1),delta(cur.score,aug.score,true,x=>x.toFixed(1))],
+    ["TPV",money(cur.tpv),delta(cur.tpv,aug.tpv,true,money)],
+    ["Net Churn",pct(cur.churn,2),delta(cur.churn,aug.churn,true,x=>pct(x,2))],
+    ["Acionáveis",pct(cur.acion,1),delta(cur.acion,aug.acion,true,x=>pct(x,1))],
+    ["TPV x Meta",pct(cur.tpvGoal,1),delta(cur.tpvGoal,aug.tpvGoal,true,x=>pct(x,1))]
+  ];
+  box.innerHTML=`<div class="evolution-grid">${cards.map(c=>`<div class="evo"><div class="e-label">${c[0]}</div><div class="e-val">${c[1]}</div><div class="e-delta">vs agosto ${c[2]}</div></div>`).join("")}</div>`;
+}
+function renderAlerts(arr,d){
+  const a=agg(arr), alerts=[];
+  if(monthFromData()==="202609" && d.proj<a.obj) alerts.push(`⚠️ TPV abaixo do ritmo: projeção ${money(d.proj)}.`);
+  const scoreAvailable=arr.some(x=>x.score>0 || x.resultScore>0 || x.actScore>0);
+  if(scoreAvailable && a.resultScore<2.49) alerts.push(`🔴 Risco/ocorrência de zerar o Bloco 2: resultado ${a.resultScore.toFixed(1)} pts.`);
+  if(!scoreAvailable) alerts.push(`🔵 Score aguardando atualização D-2 — ausência de dado não é zero.`);
+  if(a.churn<-.034) alerts.push(`🟡 Net Churn em ${pct(a.churn,2)}: abaixo da faixa T3.`);
+  const acionAvailable=arr.some(x=>x.tarefas>0 || x.revert>0);
+  const gap=Math.max(0,arr.reduce((s,x)=>s+Math.max(0,x.tarefas-x.revert),0));
+  if(acionAvailable && gap) alerts.push(`🎯 Faltam ${gap.toFixed(0)} acionável(is) para completar as tarefas.`);
+  if(!acionAvailable) alerts.push(`🔵 Acionáveis aguardando atualização D-2 — não contabilizados como zero.`);
+  if(monthFromData()==="202609" && d.proj>=a.obj) alerts.push(`🚀 Ritmo acima da projeção necessária para a meta.`);
+  if(a.awareness<=.30) alerts.push(`🔴 Awareness ≤ 30%: Bloco 1 pode zerar.`);
+  if(!alerts.length) alerts.push("🟢 Nenhum alerta crítico no recorte selecionado.");
+  document.getElementById("autoAlerts").innerHTML=alerts.map(x=>`<div class="alert-item">${x}</div>`).join("");
+}
+function tierPoints(value, thresholds, weight, lowerIsBetter=false){
+  const mult=[1,.8,.6,.4,.2];
+  for(let i=0;i<thresholds.length;i++){
+    if(lowerIsBetter ? value<=thresholds[i] : value>=thresholds[i]) return weight*mult[i];
+  }
+  return 0;
+}
+function simScore(){
+  const tpv=num(document.getElementById("simTpv").value)/100;
+  const churn=Math.abs(num(document.getElementById("simChurn").value))/100;
+  const ac=num(document.getElementById("simAcion").value);
+  // Rules from the supplied score table: T1..T5 map to 100/80/60/40/20% of each KPI weight.
+  const tp= tierPoints(tpv,[1.05,1.02,1.00,.97,.94],3,false);
+  const nc= tierPoints(churn,[.02,.025,.034,.045,.055],3,true);
+  // Acionáveis is binary here: reaching the consultant's current task target earns 1 point.
+  let selected=filtered(consultants())[0], target=selected?selected.tarefas:10;
+  const acp=ac>=target?1:0;
+  let result=tp+nc+acp; if(result<2.49) result=0;
+  const arr=filtered(consultants()), act=arr.length?agg(arr).actScore:0;
+  const total=result+act;
+  document.getElementById("simResult").textContent=result.toFixed(1);
+  document.getElementById("simAct").textContent=act.toFixed(1);
+  document.getElementById("simTotal").textContent=total.toFixed(1);
+}
+function seedSimulator(arr){
+  const x=arr.length===1?arr[0]:null;
+  if(x){
+    document.getElementById("simTpv").value=((x.obj?x.tpv/x.obj:1)*100).toFixed(1);
+    document.getElementById("simChurn").value=(x.churn*100).toFixed(2);
+    document.getElementById("simAcion").value=Math.round(x.revert);
+  }
+  simScore();
+}
+function printReport(){
+  const mode=document.getElementById("pdfMode").value;
+  const prevRegion=currentRegion, prevConsultant=currentConsultant;
+  document.body.dataset.pdf=mode;
+  let title="Relatório Geral • RJ + SP • Performance Zheos";
+
+  if(mode==="sp"){ currentRegion="SP"; currentConsultant="TODOS"; title="Relatório Equipe SP • Performance Zheos"; }
+  if(mode==="rj"){ currentRegion="RJ"; currentConsultant="TODOS"; title="Relatório Equipe RJ • Performance Zheos"; }
+  if(mode==="geral"){ currentRegion="GERAL"; currentConsultant="TODOS"; }
+  if(mode==="consultor"){
+    if(currentConsultant==="TODOS"){alert("Selecione um consultor no filtro do topo para gerar o PDF Consultor.");return}
+    const x=consultants().find(c=>c.id===currentConsultant); title=`Relatório Individual • ${x?x.name:"Consultor"}`;
+  }
+
+  refreshAll();
+  document.getElementById("pdfTitle").textContent=title+" • "+document.getElementById("periodBadge").textContent;
+
+  const restore=()=>{
+    currentRegion=prevRegion; currentConsultant=prevConsultant;
+    refreshAll();
+    window.removeEventListener("afterprint",restore);
+  };
+  window.addEventListener("afterprint",restore);
+  window.print();
+}
+
+function renderGerencial(){
+  const all=consultants(), arr=filtered(all), a=agg(arr);
+  const scoreAvailable=arr.some(x=>x.score>0 || x.resultScore>0 || x.actScore>0);
+  document.getElementById("kScore").innerHTML=scoreAvailable
+    ? `<span class="scorepill ${scoreClass(a.score)}">${a.score.toFixed(1)}</span>`
+    : `<span class="scorepill s-yellow">D-2</span>`;
+  document.getElementById("kTpv").textContent=money(a.tpv);
+  document.getElementById("kTpvSub").textContent=`vs mês anterior: ${pct(a.tpvVar,1)}`;
+  document.getElementById("kMeta").textContent=money(a.obj);
+  document.getElementById("kMetaSub").textContent=`atingimento: ${pct(a.tpvGoal,1)}`;
+  document.getElementById("kChurn").textContent=pct(a.churn,2);
+  document.getElementById("kAcion").textContent=pct(a.acion,1);
+  document.getElementById("kPeople").textContent=a.n;
+  const rj=all.filter(x=>x.reg==="RJ").length, sp=all.filter(x=>x.reg==="SP").length;
+  document.getElementById("kPeopleSub").textContent=currentConsultant==="TODOS" ? `RJ ${rj} • SP ${sp}` : "visão individual";
+  const ranked=[...arr].sort((x,y)=>y.score-x.score);
+  document.getElementById("rankBody").innerHTML=ranked.map((x,i)=>{
+    const prev = augById(x.id);
+    const evolved = prev && monthFromData()==="202609" && x.score>prev.score+0.05;
+    let tag = i===0?'<span class="tag gold">🥇 líder</span>':evolved?'<span class="tag up">📈 evoluiu</span>':x.score<6?'<span class="tag attn">⚠ atenção</span>':'';
+    return `<tr><td>${i+1}</td><td><b>${esc(x.name)}</b></td><td>${tag}</td><td>${x.reg}</td>
+    <td class="num">${(x.score>0||x.resultScore>0||x.actScore>0)?`<span class="scorepill ${scoreClass(x.score)}">${x.score.toFixed(1)}</span>`:'<span class="scorepill s-yellow">D-2</span>'}</td>
+    <td class="num">${(x.score>0||x.resultScore>0||x.actScore>0)?x.resultScore.toFixed(1):'—'}</td><td class="num">${(x.score>0||x.resultScore>0||x.actScore>0)?x.actScore.toFixed(1):'—'}</td>
+    <td class="num">${pct(x.obj?x.tpv/x.obj:0,1)}</td><td class="num">${pct(x.churn,2)}</td><td class="num">${pct(x.acion,1)}</td></tr>`;
+  }).join("");
+  renderActions(arr,a);
+  renderProjection(arr);
+  renderIntelligence(arr);
+  renderRegionCard("RJ","rjCard",all);
+  renderRegionCard("SP","spCard",all);
+}
+function renderActions(arr,a){
+  const issues=[];
+  const lowScore=arr.filter(x=>x.score<6).length;
+  const churnBad=arr.filter(x=>x.churn<-.055).length;
+  const awarenessFloor=arr.filter(x=>x.awareness<=.30).length;
+  const tpvBehind=arr.filter(x=>x.obj && x.tpv/x.obj<.90).length;
+  const agendaBad=arr.filter(x=>x.agenda<.4875).length;
+  if(lowScore) issues.push(["red",`${lowScore} consultor(es) com score abaixo de 6,0.`]);
+  if(churnBad) issues.push(["red",`${churnBad} em nível crítico de Net Churn (< -5,5%).`]);
+  if(awarenessFloor) issues.push(["red",`${awarenessFloor} abaixo do piso de Awareness de 30% — Bloco Atuação zera.`]);
+  if(tpvBehind) issues.push(["yellow",`${tpvBehind} abaixo de 90% do objetivo de TPV.`]);
+  if(agendaBad) issues.push(["yellow",`${agendaBad} abaixo do T5 de aderência à agenda.`]);
+  if(!issues.length) issues.push(["green","Nenhum alerta crítico no recorte atual."]);
+  document.getElementById("actions").innerHTML=issues.map(x=>`<div class="action ${x[0]}">${x[1]}</div>`).join("");
+}
+function monthFromData(){
+  for(const k of ["score","tpv","netchurn"]){
+    const r=(DB[k]||[])[0]; const m=r&&get(r,["Mês"]); if(m)return String(m);
+  }
+  return "";
+}
+function businessDaysSep2026(){
+  let total=0; for(let d=1;d<=30;d++){let dt=new Date(2026,8,d); if(dt.getDay()!=0&&dt.getDay()!=6&&d!==7)total++} return total;
+}
+function renderProjection(arr){
+  const mes=monthFromData(), box=document.getElementById("projectionBox");
+  if(mes!=="202609"){
+    box.innerHTML=`<div class="empty"><b>Aguardando carga de Setembro/2026</b><br><span class="mini">A estrutura já está pronta. Setembro/2026 terá ${businessDaysSep2026()} dias úteis considerando o feriado nacional de 07/09.</span></div>`;
+    return;
+  }
+  const a=agg(arr), today=dataBaseObj(), targetMonth=8, targetYear=2026;
+  let elapsed=0,total=businessDaysSep2026();
+  let maxDay=today.getFullYear()===targetYear&&today.getMonth()===targetMonth?Math.min(today.getDate(),30):30;
+  for(let d=1;d<=maxDay;d++){let dt=new Date(targetYear,targetMonth,d);if(dt.getDay()!=0&&dt.getDay()!=6&&d!==7)elapsed++}
+  elapsed=Math.max(1,elapsed); const remaining=Math.max(0,total-elapsed);
+  const pace=a.tpv/elapsed, currentProj=pace*total, conservative=currentProj*.92;
+  const need=remaining?Math.max(0,a.obj-a.tpv)/remaining:0;
+  box.innerHTML=`
+    <div class="mini"><b>Realizado até hoje:</b> ${money(a.tpv)}<br>${elapsed} dias úteis decorridos • ${remaining} restantes • ${total} no mês<br>${elapsed<=3?'<b>🔵 Projeção preliminar:</b> início de mês; interpretar o ritmo com cautela.':''}</div>
+    <div class="scenario red"><span>🔴 Conservador</span><span>${money(conservative)}</span></div>
+    <div class="scenario yellow"><span>🟡 Ritmo atual</span><span>${money(currentProj)}</span></div>
+    <div class="scenario green"><span>🟢 Cenário meta</span><span>${money(a.obj)}</span></div>
+    <div class="mini">Ritmo atual: <b>${money(pace)}/dia</b><br>Ritmo necessário: <b>${money(need)}/dia útil restante</b></div>`;
+}
+function renderRegionCard(reg,id,all){
+  const arr=all.filter(x=>x.reg===reg), a=agg(arr);
+  document.getElementById(id).innerHTML=`
+    <div class="region-title"><span class="region-name">${reg==="RJ"?"🌊 RJ":"🏙️ SP"}</span><span class="region-score">${a.score.toFixed(1)}</span></div>
+    <div class="mini">${a.n} consultores • ${money(a.tpv)} TPV</div>
+    <div class="barline"><span>Meta TPV</span><div class="bar"><i style="width:${Math.min(100,a.tpvGoal*100)}%"></i></div><b>${pct(a.tpvGoal,0)}</b></div>
+    <div class="barline"><span>Awareness</span><div class="bar"><i style="width:${Math.min(100,a.awareness*100)}%"></i></div><b>${pct(a.awareness,0)}</b></div>
+    <div class="barline"><span>Agenda</span><div class="bar"><i style="width:${Math.min(100,a.agenda*100)}%"></i></div><b>${pct(a.agenda,0)}</b></div>
+    <div class="mini">Net Churn: <b>${pct(a.churn,2)}</b> • Acionáveis: <b>${pct(a.acion,1)}</b></div>`;
+}
+
+function renderGaps(){
+  const arr=filtered(consultants());
+  const body=document.getElementById("gapsBody"); if(!body) return;
+  const badge=document.getElementById("gapDateBadge"); if(badge) badge.textContent="Data-base "+dateBR(dataBaseDate);
+  body.innerHTML=[...arr].sort((a,b)=>a.name.localeCompare(b.name)).map(x=>{
+    const aw=awarenessGapCount(x), ch=churnRecoveryGap(x), tp=tpvGapValue(x), ac=acionGapCount(x), ag=agendaGapCount(x);
+    return `<tr>
+      <td><b>${esc(x.name)}</b></td><td>${x.reg}</td>
+      <td class="num">${pct(x.awareness,1)} <span class="mini">(${Math.round(x.pesquisaResp)}/${awarenessTargetCount(x)})</span></td>
+      <td class="num ${gapClass(aw)}">${aw?`faltam ${aw}`:"META ✓"}</td>
+      <td class="num">${Math.round(netLostCount(x))} <span class="mini">líquidos</span></td>
+      <td class="num ${gapClass(ch)}">${ch?`recuperar ${ch}`:"META ✓"}</td>
+      <td class="num ${tp>0?"gap-bad":"gap-ok"}">${tp?money(tp):"META ✓"}</td>
+      <td class="num ${gapClass(ac)}">${ac?`${ac} <span class="mini">D-2</span>`:"META ✓"}</td>
+      <td class="num ${gapClass(ag)}">${ag?`faltam ${ag}`:"META ✓"}</td>
+      <td class="num ${x.prod>=TARGET.prod?"gap-ok":"gap-bad"}">${x.prod.toFixed(1)} ${x.prod<TARGET.prod?`<span class="mini">(falta ${(TARGET.prod-x.prod).toFixed(1)})</span>`:"✓"}</td>
+    </tr>`;
+  }).join("");
+}
+function renderPersonGaps(x){
+  const aw=awarenessGapCount(x), ch=churnRecoveryGap(x), tp=tpvGapValue(x), ac=acionGapCount(x), ag=agendaGapCount(x);
+  document.getElementById("personGaps").innerHTML=[
+    ["Awareness", aw?`Faltam ${aw}`:"Meta atingida",`${Math.round(x.pesquisaResp)} realizados • meta ${awarenessTargetCount(x)} = 47,5% da base ativa atual (${Math.round(x.ativos)})`],
+    ["Churn", ch?`Recuperar ${ch}`:"Meta atingida",`Perda líquida ${Math.round(netLostCount(x))} • limite T1 ${allowedChurnLossCount(x)} = 2% da base ativa anterior (${Math.round(x.ativosPrev)})`],
+    ["TPV", tp?money(tp):"Meta atingida",`Realizado ${money(x.tpv)} • objetivo ${money(x.obj)}`],
+    ["Acionáveis", ac?`Faltam ${ac}`:"Meta atingida",`${Math.round(x.revert)} / ${Math.round(x.tarefas)} • atualização D-2`],
+    ["Agenda", ag?`Faltam ${ag}`:"Meta atingida",`${Math.round(x.aderentes)} aderentes • meta ${agendaTargetCount(x)} = 65% dos ${Math.round(x.agendados)} agendados`],
+    ["Produtividade",x.prod>=TARGET.prod?"Meta atingida":`Falta ${(TARGET.prod-x.prod).toFixed(1)}/dia`,`Atual ${x.prod.toFixed(1)}/dia • meta 6,0/dia`]
+  ].map(([l,v,s])=>`<div class="gap-card"><div class="glabel">${l}</div><div class="gvalue ${v==="Meta atingida"?"gap-ok":""}">${v}</div><div class="gsub">${s}</div></div>`).join("");
+}
+
+function renderIndividual(){
+  const all=filtered(consultants());
+  const sel=document.getElementById("personSelect");
+  const old=sel.value;
+  sel.innerHTML=all.sort((a,b)=>a.name.localeCompare(b.name)).map(x=>`<option value="${esc(x.id)}">${esc(x.name)} • ${x.reg}</option>`).join("");
+  if(currentConsultant!=="TODOS" && all.some(x=>x.id===currentConsultant)) sel.value=currentConsultant;
+  else if(old && all.some(x=>x.id===old)) sel.value=old;
+  renderPerson();
+}
+function renderPerson(){
+  const id=document.getElementById("personSelect").value, x=consultants().find(y=>y.id===id);
+  if(!x){document.getElementById("personMetrics").innerHTML='<div class="empty">Sem consultores neste recorte.</div>';return}
+  document.getElementById("personScore").innerHTML=`<span class="scorepill ${scoreClass(x.score)}">${x.score.toFixed(1)}</span>`;
+  const metrics=[
+    ["TPV vs mês anterior",x.tpvPrev?x.tpv/x.tpvPrev:0,.90,1.04],
+    ["Objetivo TPV",x.obj?x.tpv/x.obj:0,.90,1],
+    ["Net Churn",x.churn,-.055,-.02],
+    ["Acionáveis",x.acion,1,1],
+    ["Awareness",x.awareness,.3563,.475],
+    ["Aderência Agenda",x.agenda,.4875,.65],
+    ["Produtividade/dia",x.prod/6,1,1]
+  ];
+  document.getElementById("personMetrics").innerHTML=metrics.map(([n,v,lo,hi])=>{
+    let display=n==="Produtividade/dia"?x.prod.toFixed(1):pct(v,n==="Net Churn"?2:1);
+    let width=n==="Net Churn"?Math.max(0,Math.min(100,(v+.08)/.08*100)):Math.max(0,Math.min(100,v*100));
+    return `<div class="metric-row"><b>${n}</b><div class="bar"><i style="width:${width}%"></i></div><b style="text-align:right">${display}</b><span class="mini">${x.reg}</span></div>`;
+  }).join("");
+  renderPersonGaps(x);
+}
+function renderDiretoria(){
+  const all=consultants(), arr=filtered(all), a=agg(arr);
+  const top=[...arr].sort((x,y)=>y.score-x.score).slice(0,3);
+  const bottom=[...arr].sort((x,y)=>x.score-y.score).slice(0,3);
+  document.getElementById("execSummary").innerHTML=`
+    <p><b>${currentRegion}</b> está com score médio <b>${a.score.toFixed(1)}</b> — Resultado <b>${a.resultScore.toFixed(1)}/7</b> + Atuação <b>${a.actScore.toFixed(1)}/3</b>. TPV em <b>${pct(a.tpvGoal,1)}</b> da meta e Net Churn consolidado de <b>${pct(a.churn,2)}</b>.</p>
+    <div class="action green">Destaques: ${top.map(x=>esc(x.name.split(" ")[0])+" ("+x.score.toFixed(1)+")").join(" • ")}</div>
+    <div class="action ${bottom[0]?.score<6?"red":"yellow"}">Atenção: ${bottom.map(x=>esc(x.name.split(" ")[0])+" ("+x.score.toFixed(1)+")").join(" • ")}</div>`;
+  // No PDF de um polo, o comparativo também respeita o filtro: SP não exibe RJ e RJ não exibe SP.
+  const regions=currentRegion==="GERAL"?["RJ","SP"]:[currentRegion];
+  const rows=regions.map(r=>{const x=agg(all.filter(c=>c.reg===r));return `<tr><td><b>${r}</b></td><td class="num">${x.n}</td><td class="num">${x.score.toFixed(1)}</td><td class="num">${money(x.tpv)}</td><td class="num">${pct(x.tpvGoal,1)}</td><td class="num">${pct(x.churn,2)}</td></tr>`}).join("");
+  document.getElementById("regionCompare").innerHTML=rows;
+  const indicators=[["TPV Meta",a.tpvGoal],["Awareness",a.awareness],["Agenda",a.agenda],["Acionáveis",Math.min(a.acion,1)]];
+  document.getElementById("indicatorBars").innerHTML=indicators.map(([n,v])=>`<div class="barline"><b>${n}</b><div class="bar"><i style="width:${Math.min(100,v*100)}%"></i></div><b>${pct(v,1)}</b></div>`).join("");
+}
+function periodLabel(){
+  const m=monthFromData(); let txt="Base carregada";
+  if(/^\d{6}$/.test(m)){const y=m.slice(0,4),mm=+m.slice(4);const nomes=["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];txt=`${nomes[mm]}/${y}${m==="202608"?" • referência":""}`}
+  document.getElementById("periodBadge").textContent=txt;
+}
+function refreshAll(){
+  updateConsultantFilter();
+  renderGerencial(); renderGaps(); renderIndividual(); renderDiretoria(); periodLabel();
+  document.getElementById("statusBadge").className="badge ok";
+  document.getElementById("statusBadge").textContent="✓ Dashboard processado";
+}
+function resetData(){
+  DB=JSON.parse(JSON.stringify(SEPTEMBER));
+  setDataBaseDate("2026-09-04");
+  document.querySelectorAll('input[type=file]').forEach(x=>x.value="");
+  document.querySelectorAll('[id^=st-]').forEach(x=>x.textContent="Base 04/09");
+  currentRegion="GERAL"; currentConsultant="TODOS";
+  document.querySelectorAll("#regionSeg button").forEach(b=>b.classList.toggle("active",b.dataset.region==="GERAL"));
+  refreshAll();
+}
+function excelRows(ws){
+  return XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+}
+document.querySelectorAll('input[type=file]').forEach(inp=>inp.addEventListener("change",async e=>{
+  const file=e.target.files[0]; if(!file)return;
+  inferDateFromFilename(file.name);
+  const data=await file.arrayBuffer(); const wb=XLSX.read(data,{type:"array"});
+  DB[inp.dataset.kind]=excelRows(wb.Sheets[wb.SheetNames[0]]);
+  document.getElementById("st-"+inp.dataset.kind).textContent="✓ "+file.name;
+  document.getElementById("statusBadge").className="badge warn";
+  document.getElementById("statusBadge").textContent="Arquivos alterados • clique Processar";
+}));
+const dbDateInput=document.getElementById("dataBaseDateInput");
+if(dbDateInput) dbDateInput.addEventListener("change",()=>{setDataBaseDate(dbDateInput.value);refreshAll();});
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  ["gerencial","faltantes","individual","diretoria","dados"].forEach(t=>document.getElementById("tab-"+t).classList.toggle("hidden",t!==b.dataset.tab));
+}));
+document.querySelectorAll("#regionSeg button").forEach(b=>b.addEventListener("click",()=>{
+  currentRegion=b.dataset.region;
+  currentConsultant="TODOS";
+  document.querySelectorAll("#regionSeg button").forEach(x=>x.classList.toggle("active",x===b));
+  refreshAll();
+}));
+document.getElementById("globalConsultant").addEventListener("change",e=>{
+  currentConsultant=e.target.value;
+  refreshAll();
+});
+["simTpv","simChurn","simAcion"].forEach(id=>document.getElementById(id)?.addEventListener("input",simScore));
+document.getElementById("personSelect").addEventListener("change",e=>{
+  currentConsultant=e.target.value || "TODOS";
+  const g=document.getElementById("globalConsultant");
+  if(g && [...g.options].some(o=>o.value===currentConsultant)) g.value=currentConsultant;
+  renderPerson();
+});
+setDataBaseDate("2026-09-04");
+refreshAll();
+</script>
+</body></html>
