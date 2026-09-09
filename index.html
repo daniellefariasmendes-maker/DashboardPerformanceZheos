@@ -226,7 +226,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 9px;
   
   <section id="tab-metas" class="hidden">
     <div class="card section">
-      <h2>🎯 Metas & Faltantes por consultor</h2>
+      <h2>🎯 Metas & Faltantes por consultor <span class="mini">• V14</span></h2>
       <p class="mini">Cada indicador mostra o valor atual e a meta juntos, sem criar uma coluna separada; ao lado fica somente o faltante. Awareness usa a base ativa do mês atual; Churn usa a base ativa do mês passado; TPV usa a coluna K e meta T1 de 105%; Agenda T1 = 65%; Produtividade = 6/dia. Score e Acionáveis seguem D-2.</p>
       <div class="scroll"><table>
         <thead>
@@ -591,8 +591,8 @@ function printReport(){
 
 
 function tpvAction(a, arr){
-  const prev = arr.reduce((s,x)=>s+num(x.tpvPrev),0);
   const cur = arr.reduce((s,x)=>s+num(x.tpv),0);
+  const prev = arr.reduce((s,x)=>s+num(x.tpvPrev),0);
   const target = prev * 1.05;
   const gap = Math.max(0, target-cur);
   const days = elapsedBusinessDaysSep();
@@ -733,14 +733,19 @@ function renderGoals(){
     .map(x=>{
       const awTarget=awarenessTarget(x), awGap=awarenessGap(x);
       const chGap=churnRecovery(x);
-      const tTarget=x.tpvPrev*1.05, tGap=Math.max(0,tTarget-x.tpv);
+      // TPV: cálculo direto e obrigatório.
+      // Meta T1 em R$ = TPV mês passado × 105%.
+      // Falta = Meta T1 em R$ - TPV atual.
+      const tTarget=num(x.tpvPrev)*1.05;
+      const tGap=Math.max(0,tTarget-num(x.tpv));
+      const tpvHit=num(x.tpvVariation)>=1.05;
       const acGap=actionableGap(x);
       const agTarget=agendaTarget(x), agGap=agendaGap(x);
       const prodGap=Math.max(0,6-x.prod);
 
       const awCls=awGap>0?'neg':'pos';
       const chCls=chGap>0?'neg':'pos';
-      const tpvCls=tGap>0?'neg':'pos';
+      const tpvCls=tpvHit?'pos':'neg';
       const acCls=acGap===null?'neutral':(acGap>0?'neg':'pos');
       const agCls=agGap>0?'neg':'pos';
       const prodCls=x.prod>=6?'pos':'neg';
@@ -758,7 +763,7 @@ function renderGoals(){
         <td class="num ${chCls}">${chGap>0?`recuperar ${chGap}`:'META ✓'}</td>
 
         <td class="num">${pct(x.tpvVariation,2)}<div class="mini">meta 105%</div></td>
-        <td class="num ${tpvCls}">${tGap>0?money(tGap):'META ✓'}${tGap>0&&days.remaining>0?`<div class="mini">${money(tGap/days.remaining)}/dia</div>`:''}</td>
+        <td class="num ${tpvHit?'pos':'neg'}">${tpvHit?'META ✓':money(tGap)}${!tpvHit&&days.remaining>0?`<div class="mini">${money(tGap/days.remaining)}/dia</div>`:''}</td>
 
         <td class="num">${acCurrent}<div class="mini">meta ${acTarget}</div></td>
         <td class="num ${acCls}">${acGap===null?'D-2':(acGap>0?`${acGap} D-2`:'META ✓')}</td>
