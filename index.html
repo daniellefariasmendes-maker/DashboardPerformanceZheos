@@ -133,7 +133,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 9px;
       <b>Consultor:</b>
       <select id="globalConsultant"><option value="TODOS">Todos os consultores</option></select>
     </div>
-    <div id="statusBadge" class="badge ok">✓ Setembro/2026 • TPV atualizado 09/09 • Score e Acionáveis D-2</div>
+    <div id="statusBadge" class="badge ok">✓ Setembro/2026 • TPV 09/09 • importação numérica corrigida</div>
   </div>
 
   <section id="tab-gerencial">
@@ -226,7 +226,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 9px;
   
   <section id="tab-metas" class="hidden">
     <div class="card section">
-      <h2>🎯 Metas & Faltantes por consultor <span class="mini">• V16</span></h2>
+      <h2>🎯 Metas & Faltantes por consultor <span class="mini">• V17</span></h2>
       <p class="mini">Cada indicador mostra o valor atual e a meta juntos, sem criar uma coluna separada; ao lado fica somente o faltante. Awareness usa a base ativa do mês atual; Churn usa a base ativa do mês passado; TPV usa a coluna K e meta T1 de 105%; Agenda T1 = 65%; Produtividade = 6/dia. Score e Acionáveis seguem D-2.</p>
       <div class="scroll"><table>
         <thead>
@@ -281,7 +281,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 9px;
   <section id="tab-dados" class="hidden">
     <div class="card section">
       <h2>📂 Carregar planilhas do mês</h2>
-      <p class="mini">Selecione os arquivos do mesmo formato usado hoje. <b>Regra oficial de TPV:</b> coluna K mostra a variação; para ação, a meta em R$ é TPV do mês passado × 105%, com falta e necessidade diária.</p>
+      <p class="mini">Selecione os arquivos do mesmo formato usado hoje. <b>Regra oficial de TPV:</b> K = percentual pronto; G = TPV atual; H = TPV mês passado. Meta em R$ = H × 105%; falta = meta − G.</p>
       <div class="upload-grid">
         <div class="upload"><b>💰 TPV</b><span class="mini" id="st-tpv">Base setembro</span><input type="file" accept=".xlsx,.xls" data-kind="tpv"></div>
         <div class="upload"><b>🎯 Acionáveis</b><span class="mini" id="st-acionaveis">Base setembro</span><input type="file" accept=".xlsx,.xls" data-kind="acionaveis"></div>
@@ -331,13 +331,38 @@ function regional(name){
   return RJ_FIRST.some(x=>n.startsWith(norm(x)+" ") || n===norm(x)) ? "RJ":"SP";
 }
 function num(v){
-  if(typeof v==="number") return v;
+  if(typeof v==="number") return Number.isFinite(v)?v:0;
   if(v==null||v==="") return 0;
   let s=String(v).trim().replace(/\s/g,"");
-  if(s.endsWith("%")) return parseFloat(s.replace("%","").replace(",", "."))/100;
-  if(s.includes(",") && s.includes(".")) s=s.replace(/\./g,"").replace(",",".");
-  else s=s.replace(",",".");
-  const x=parseFloat(s); return isNaN(x)?0:x;
+  const isPct=s.includes("%");
+  // Remove currency/symbols, keep digits, signs and separators.
+  s=s.replace(/[^\d,.\-]/g,"");
+  if(!s) return 0;
+
+  // Brazilian/Excel formatted numbers:
+  // 9.570.222,00 -> 9570222.00
+  // 9,570,222.00 -> 9570222.00
+  // 24,08% -> 24.08%
+  const lastComma=s.lastIndexOf(",");
+  const lastDot=s.lastIndexOf(".");
+  if(lastComma>-1 && lastDot>-1){
+    if(lastComma>lastDot){
+      s=s.replace(/\./g,"").replace(",",".");
+    }else{
+      s=s.replace(/,/g,"");
+    }
+  }else if(lastComma>-1){
+    const parts=s.split(",");
+    if(parts.length>2) s=parts.join("");
+    else s=s.replace(",",".");
+  }else if(lastDot>-1){
+    const parts=s.split(".");
+    if(parts.length>2) s=parts.join("");
+  }
+
+  const x=parseFloat(s);
+  if(isNaN(x)) return 0;
+  return isPct ? x/100 : x;
 }
 function pct(v,d=1){return (100*num(v)).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%"}
 function money(v){
@@ -838,7 +863,9 @@ function resetData(){
   refreshAll();
 }
 function excelRows(ws){
-  return XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+  // raw:true preserva números do Excel como números.
+  // Isso evita TPV em R$ virar texto formatado e ser interpretado como zero.
+  return XLSX.utils.sheet_to_json(ws,{defval:"",raw:true});
 }
 document.querySelectorAll('input[type=file]').forEach(inp=>inp.addEventListener("change",async e=>{
   const file=e.target.files[0]; if(!file)return;
